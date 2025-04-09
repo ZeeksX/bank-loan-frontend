@@ -4,7 +4,7 @@ import LoanApplicationForm from "./LoanApplicationForm";
 
 const Apply = () => {
   return (
-    <div className="flex justify-center w-full p-8">
+    <div className="inter flex justify-center w-full p-8 bg-gray-50">
       <div className="flex justify-center items-center">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">

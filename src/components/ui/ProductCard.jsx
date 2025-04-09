@@ -21,7 +21,7 @@ const ProductCard = ({ product }) => {
             </div>
             <p className="text-sm text-gray-500 mb-4">{product.description}</p>
             <Link to={`/apply/${product.id}`}>
-                <button className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                <button className="w-full cursor-pointer px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
                     Apply Now
                 </button>
             </Link>
