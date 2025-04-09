@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React from 'react';
+import { Link, useOutletContext } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, BarChart3, CreditCard, DollarSign, LineChart, Wallet } from 'lucide-react';
 import DashboardCard from '../ui/DashboardCard';
@@ -74,65 +74,12 @@ const cardData = [
   }
 ];
 
-const ProductData = [
-  {
-    id: 1,
-    product_name: 'Personal Loan',
-    rate: '9.5%',
-    term: '12-60 months',
-    amount: 'Up to $50,000',
-    description: 'For any personal needs from home improvement to major purchases',
-  },
-  {
-    id: 2,
-    product_name: 'Education Loan',
-    rate: '6.25%',
-    term: '12-120 months',
-    amount: 'Up to $100,000',
-    description: 'Investment in your education and future career',
-  },
-  {
-    id: 3,
-    product_name: 'Debt Consolidation',
-    rate: '10.75%',
-    term: '12-72 months',
-    amount: 'Up to $75,000',
-    description: 'Simplify your finances by combining multiple debts',
-  },
-]
-
 const Container = () => {
-  const [productData, setProductData] = useState([]);
-  const ProductData = productData.slice(0, 3);
-  //Fetch all loan products
-  useEffect(() => {
-    const fetchLoanProducts = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/api/loans/products', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log(data)
-        setProductData(data)
-
-      } catch (error) {
-        console.error('Error fetching loan products: ', error);
-      }
-    };
-
-    fetchLoanProducts();
-  }, []);
+  const productData = useOutletContext();
+  const ProductData = productData?.slice(0, 3) || [];
 
   return (
-    <div className="inter min-h-screen flex justify-center items-center bg-gray-50">
+    <div className="inter min-h-screen flex justify-center w-full items-center bg-gray-50">
       <div className="w-[92%] mx-auto py-8">
         {/* Header Section */}
         <div className="mb-12">
@@ -287,9 +234,9 @@ const Container = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {ProductData.map((product) => (
+            {ProductData.length > 0 ? (ProductData.map((product) => (
               <motion.div
-                key={product.id}
+                key={product.product_id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: product.id * 0.1 }}
@@ -298,7 +245,9 @@ const Container = () => {
               >
                 <ProductCard product={product} />
               </motion.div>
-            ))}
+            ))) : (
+              <div className='inter text-2xl font-bold'> No Loan product available</div>
+            )}
           </div>
         </div>
       </div>

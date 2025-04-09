@@ -4,132 +4,152 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
-        return !!localStorage.getItem("access_token"); // Check if token exists
+        return Boolean(localStorage.getItem("access_token"));
     });
 
     const [user, setUser] = useState(() => {
-        const storedUser = localStorage.getItem("user");
-        return storedUser ? JSON.parse(storedUser) : null;
+        try {
+            const storedUser = localStorage.getItem("user");
+            return storedUser ? JSON.parse(storedUser) : null;
+        } catch (error) {
+            console.error("Error parsing user data:", error);
+            localStorage.removeItem("user");
+            return null;
+        }
     });
 
-    // Function to decode JWT token and extract expiration time
     const getTokenExpiryTime = (token) => {
         if (!token) return null;
         try {
-            // JWT tokens are split into three parts by dots
             const payload = token.split('.')[1];
-            // The middle part needs to be base64 decoded
             const decodedPayload = JSON.parse(atob(payload));
-            // exp is the expiration time in seconds
-            return decodedPayload.exp * 1000; // Convert to milliseconds
+            return decodedPayload.exp * 1000;
         } catch (error) {
-            console.error("Error decoding token", error);
+            console.error("Error decoding token:", error);
             return null;
         }
     };
 
-    // Function to refresh the access token using the refresh token
     const refreshToken = async () => {
         const refresh_token = localStorage.getItem("refresh_token");
-        if (!refresh_token) {
+        const storedUser = localStorage.getItem("user");
+
+        if (!refresh_token || !storedUser) {
             logout();
             return false;
         }
+
         try {
             const response = await fetch("http://localhost:8000/api/refresh", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ refresh: refresh_token }),
             });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
             const data = await response.json();
-            if (response.ok && data.access_token) {
+
+            if (data.access_token) {
                 localStorage.setItem("access_token", data.access_token);
-                setupTokenRefresh(data.access_token); // Setup the next refresh
+                setupTokenRefresh(data.access_token);
                 return true;
-            } else {
-                // If refresh fails, log out the user.
-                logout();
-                return false;
             }
+
+            logout();
+            return false;
+
         } catch (error) {
-            console.error("Error refreshing token", error);
+            console.error("Token refresh failed:", error);
             logout();
             return false;
         }
     };
 
-    // Setup token refresh timer based on expiration time
     const setupTokenRefresh = (accessToken) => {
         const expiryTime = getTokenExpiryTime(accessToken);
         if (!expiryTime) return;
 
-        // Calculate time until 5 minutes before expiry
         const currentTime = Date.now();
-        const timeUntilRefresh = Math.max(0, expiryTime - currentTime - (5 * 60 * 1000));
+        const timeUntilRefresh = Math.max(0, expiryTime - currentTime - 300000);
 
-        // Clear any existing timer
-        if (window.refreshTimer) {
-            clearTimeout(window.refreshTimer);
-        }
+        if (window.refreshTimer) clearTimeout(window.refreshTimer);
 
-        // Set up the new timer
         window.refreshTimer = setTimeout(() => {
-            refreshToken();
+            refreshToken().catch(error =>
+                console.error("Auto refresh failed:", error)
+            );
         }, timeUntilRefresh);
-
     };
 
-    // Update authentication state on mount and set up token refresh
     useEffect(() => {
-        const accessToken = localStorage.getItem("access_token");
-        const storedUser = localStorage.getItem("user");
+        const validateAuthState = () => {
+            const accessToken = localStorage.getItem("access_token");
+            const storedUser = localStorage.getItem("user");
 
-        if (accessToken && storedUser) {
-            setIsAuthenticated(true);
-            setUser(JSON.parse(storedUser));
-            setupTokenRefresh(accessToken);
-        }
-
-        // Cleanup function to clear the timer on unmount
-        return () => {
-            if (window.refreshTimer) {
-                clearTimeout(window.refreshTimer);
+            if (!accessToken || !storedUser) {
+                logout();
+                return;
             }
+
+            try {
+                JSON.parse(storedUser);
+                setIsAuthenticated(true);
+                setupTokenRefresh(accessToken);
+            } catch (error) {
+                console.error("Invalid user data:", error);
+                logout();
+            }
+        };
+
+        validateAuthState();
+
+        return () => {
+            if (window.refreshTimer) clearTimeout(window.refreshTimer);
         };
     }, []);
 
     const login = (userData) => {
-        localStorage.setItem("user", JSON.stringify(userData));
-        localStorage.setItem("access_token", userData.access);
-        localStorage.setItem("refresh_token", userData.refresh);
+        if (!userData?.access_token || !userData?.refresh_token) {
+            console.error("Invalid login data");
+            return;
+        }
 
-        setUser(userData);
-        setIsAuthenticated(true);
-        setupTokenRefresh(userData.access);
+        try {
+            localStorage.setItem("user", JSON.stringify(userData));
+            localStorage.setItem("access_token", userData.access_token);
+            localStorage.setItem("refresh_token", userData.refresh_token);
+
+            setUser(userInfo);
+            setIsAuthenticated(true);
+            setupTokenRefresh(userData.access_token);
+
+        } catch (error) {
+            console.error("Login failed:", error);
+            logout();
+        }
     };
 
     const logout = () => {
         localStorage.removeItem("user");
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-
         setUser(null);
         setIsAuthenticated(false);
-
-        if (window.refreshTimer) {
-            clearTimeout(window.refreshTimer);
-        }
+        if (window.refreshTimer) clearTimeout(window.refreshTimer);
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, login, logout, user, refreshToken }}>
+        <AuthContext.Provider value={{
+            isAuthenticated,
+            user,
+            login,
+            logout,
+            refreshToken
+        }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
-export const useAuth = () => {
-    return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);

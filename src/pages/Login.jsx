@@ -107,7 +107,9 @@ const Login = () => {
                 // Store data and set auth context
                 login({
                     email: formData.email,
-                    password: formData.password
+                    password: formData.password,
+                    access_token: data.tokens.access,
+                    refresh_token: data.tokens.refresh,
                 });
 
                 localStorage.setItem("access_token", data.tokens.access);
