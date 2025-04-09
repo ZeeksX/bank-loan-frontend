@@ -103,14 +103,14 @@ const Login = () => {
                 showToast('Login successful!', 'success');
                 const data = await response.json();
                 console.log("Response: ", data);
-
-                // Store data and set auth context
-                login({
+                const userData = {
                     email: formData.email,
                     password: formData.password,
-                    access_token: data.tokens.access,
-                    refresh_token: data.tokens.refresh,
-                });
+                    access: data.tokens.access,
+                    refresh: data.tokens.refresh,
+                }
+                // Store data and set auth context
+                login(userData);
 
                 localStorage.setItem("access_token", data.tokens.access);
                 localStorage.setItem("refresh_token", data.tokens.refresh);

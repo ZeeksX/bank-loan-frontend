@@ -1,28 +1,16 @@
-// LoanApplicationForm.jsx (using standard HTML and Tailwind - PURE JSX - With Validation)
-import React, { useState, useCallback } from 'react'; // Added useCallback
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle } from 'lucide-react';
-import * as Yup from 'yup'; // Import Yup
-import Toast from '../Toast';
-// --- Validation Schemas ---
-// Define validation rules for each step
+import * as Yup from 'yup';
+import Toast from '../Toast'; // Assuming Toast component path is correct
 
+// --- Static Schemas (Can stay outside component) ---
 const personalSchema = Yup.object().shape({
     firstName: Yup.string().trim().required('First name is required'),
     lastName: Yup.string().trim().required('Last name is required'),
     email: Yup.string().email('Invalid email format').required('Email is required'),
-    // Basic phone validation (can be made stricter with regex if needed)
     phone: Yup.string().trim().required('Phone number is required').matches(/^[0-9+\-() ]+$/, 'Invalid phone number format'),
     address: Yup.string().trim().required('Address is required'),
-});
-
-const loanSchema = Yup.object().shape({
-    loanAmount: Yup.number()
-        .min(1000, 'Minimum loan amount is $1,000')
-        .max(50000, 'Maximum loan amount is $50,000')
-        .required('Loan amount is required'), // Should always have a value due to slider
-    loanPurpose: Yup.string().required('Please select a loan purpose'),
-    loanTerm: Yup.string().required('Please select a loan term'),
 });
 
 const employmentSchema = Yup.object().shape({
@@ -46,233 +34,384 @@ const employmentSchema = Yup.object().shape({
         otherwise: (schema) => schema.optional().nullable(),
     }),
 });
-// --- End Validation Schemas ---
+// --- End Static Schemas ---
+
+// --- Default values (used if no product is passed) ---
+const DEFAULT_MIN_AMOUNT = 100000; // Example default Naira (₦100,000)
+const DEFAULT_MAX_AMOUNT = 5000000; // Example default Naira (₦5,000,000)
+const DEFAULT_MIN_TERM = 6; // Example default 6 months
+const DEFAULT_MAX_TERM = 60; // Example default 60 months
+const DEFAULT_CURRENCY = 'NGN'; // Nigerian Naira
+const DEFAULT_CURRENCY_LOCALE = 'en-NG'; // Nigeria Locale
 
 
-const LoanApplicationForm = () => {
-    const [currentStep, setCurrentStep] = useState('personal'); // Keep step types as strings
+const LoanApplicationForm = ({ product }) => {
+    // --- Determine Loan Constraints from product or defaults ---
+    // These values are stable for the lifetime of the component instance given a product prop
+    const minAmount = product?.min_amount ?? DEFAULT_MIN_AMOUNT;
+    const maxAmount = product?.max_amount ?? DEFAULT_MAX_AMOUNT;
+    const minTerm = product?.min_term ?? DEFAULT_MIN_TERM;
+    const maxTerm = product?.max_term ?? DEFAULT_MAX_TERM;
+    const currency = product?.currency ?? DEFAULT_CURRENCY;
+    const currencyLocale = product?.locale ?? DEFAULT_CURRENCY_LOCALE;
+
+    // --- Formatting Helper (Memoized with useCallback) ---
+    // Defined early so it can be used in useMemo for the schema
+    const formatCurrency = useCallback((amount, curr = currency, loc = currencyLocale) => {
+        // Basic handling for non-numeric values during initial render or state updates
+        // Use Intl.NumberFormat for proper currency formatting
+        return new Intl.NumberFormat(loc, {
+            style: 'currency',
+            currency: curr,
+            minimumFractionDigits: 0, // Typically no kobo for Naira display
+            maximumFractionDigits: 0,
+        }).format(amount);
+    }, [currency, currencyLocale]); // Recalculate only if currency settings change
+
+
+    // --- State Definitions ---
+    const [currentStep, setCurrentStep] = useState('personal');
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
         email: '',
         phone: '',
         address: '',
-        loanAmount: 5000,
-        loanPurpose: '',
-        loanTerm: '',
+        // Initialize form state using the determined constraints
+        loanAmount: minAmount, // Start slider/amount at the minimum allowed
+        loanPurpose: product?.product_name ?? '', // Pre-fill purpose if product exists
+        loanTerm: minTerm.toString(), // Start term select at the minimum allowed
         employmentStatus: '',
         employer: '',
-        income: '', // Keep as string initially for input, Yup will cast
-        startDate: '', // Keep as string initially for input
+        income: '', // Input type="number" will handle string<->number, Yup validates number
+        startDate: '', // Input type="date" provides string, Yup validates date
     });
     const [errors, setErrors] = useState({}); // State to hold validation errors
     const [toast, setToast] = useState(null); // State for toast notifications
 
-    // --- Input Handlers ---
-    const handleInputChange = (e) => {
+    // --- Dynamic Loan Schema (Memoized with useMemo) ---
+    // This schema is specific to the loan step and depends on product limits
+    const loanSchema = useMemo(() => {
+        console.log(`DEBUG: Creating loan schema with minAmount: ${minAmount}, maxAmount: ${maxAmount}, minTerm: ${minTerm}, maxTerm: ${maxTerm}`);
+        return Yup.object().shape({
+            loanAmount: Yup.number()
+                .min(minAmount, `Minimum loan amount is ${formatCurrency(minAmount)}`) // Use derived minAmount
+                .max(maxAmount, `Maximum loan amount is ${formatCurrency(maxAmount)}`) // Use derived maxAmount
+                .required('Loan amount is required')
+                .typeError('Loan amount must be a valid number'), // Add type error message
+            loanPurpose: Yup.string()
+                .required('Loan purpose is required'), // Basic check, as it's pre-filled
+            loanTerm: Yup.number() // Validate term as a number
+                .min(minTerm, `Minimum term is ${minTerm} months`) // Use derived minTerm
+                .max(maxTerm, `Maximum term is ${maxTerm} months`) // Use derived maxTerm
+                .required('Please select a loan term')
+                .typeError('Loan term must be selected'), // Error if parsing fails
+        });
+        // Regenerate schema only if the limits or formatting function change
+    }, [minAmount, maxAmount, minTerm, maxTerm, formatCurrency]);
+
+
+    // --- Effect to sync formData after initial product load (Optional Refinement) ---
+    // Useful if product might load slightly after initial render, ensures defaults match product
+    useEffect(() => {
+        if (product) {
+            // Check if form fields are still at their initial *default* state or inconsistent
+            // This avoids overwriting user changes if they navigate back and forth
+            const needsSync =
+                formData.loanAmount === DEFAULT_MIN_AMOUNT ||
+                formData.loanTerm === DEFAULT_MIN_TERM.toString() ||
+                formData.loanPurpose === '';
+
+            if (needsSync) {
+                console.log("DEBUG: Product prop available, syncing initial form fields...");
+                setFormData(prev => ({
+                    ...prev,
+                    loanAmount: minAmount, // Ensure amount starts at product min
+                    loanPurpose: product.product_name || '', // Ensure purpose matches product
+                    loanTerm: minTerm.toString(), // Ensure term starts at product min
+                }));
+            }
+        }
+        // Run this effect when the product prop itself changes (usually only on initial load)
+        // also include the derived limits in deps to be safe if they drive initialization logic
+    }, [product, minAmount, minTerm]);
+
+
+    // --- Generate Term Options (Memoized with useMemo) ---
+    // Creates the array of term options based on product limits
+    const termOptions = useMemo(() => {
+        const options = [];
+        const start = Number(minTerm);
+        const end = Number(maxTerm);
+
+        // Check if terms are valid numbers
+        if (!isNaN(start) && !isNaN(end) && start <= end) {
+            // Create an option for each month within the range
+            for (let t = start; t <= end; t++) {
+                options.push({ value: t.toString(), label: `${t} months` });
+            }
+            return options; // Return the generated list
+        }
+
+        // Fallback if product terms are missing or invalid
+        console.warn("Product term limits invalid or missing. Using fallback term options.");
+        return [
+            { value: "12", label: "12 months" }, { value: "24", label: "24 months" },
+            { value: "36", label: "36 months" }, { value: "48", label: "48 months" },
+            { value: "60", label: "60 months" },
+        ];
+    }, [minTerm, maxTerm]); // Recalculate only if term limits change
+
+
+    // --- Input Handlers (Memoized with useCallback) ---
+    // Handles changes for standard input and select fields
+    const handleInputChange = useCallback((e) => {
         const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-        // Clear the error for this field when the user types
+        setFormData(prev => ({ ...prev, [name]: value }));
+        // Clear the specific error message when the user starts typing/selecting
         if (errors[name]) {
-            setErrors((prevErrors) => {
+            setErrors(prevErrors => {
                 const newErrors = { ...prevErrors };
                 delete newErrors[name];
                 return newErrors;
             });
         }
-    };
+    }, [errors]); // Dependency: errors state (to allow clearing)
 
-    const handleSliderChange = (e) => {
+    // Handles changes for the loan amount range slider
+    const handleSliderChange = useCallback((e) => {
         const value = parseInt(e.target.value, 10);
-        setFormData((prev) => ({ ...prev, loanAmount: value }));
+        setFormData(prev => ({ ...prev, loanAmount: value }));
+        // Clear loanAmount error specifically when slider moves
         if (errors.loanAmount) {
-            setErrors((prevErrors) => {
+            setErrors(prevErrors => {
                 const newErrors = { ...prevErrors };
                 delete newErrors.loanAmount;
                 return newErrors;
             });
         }
-    };
+    }, [errors]); // Dependency: errors state
 
-    // --- Validation Logic ---
+
+    // --- Validation Logic (Memoized with useCallback) ---
+    // Validates the current step's data against its corresponding schema
     const validateStep = useCallback(async () => {
         let schema;
         let dataToValidate = {};
+        // Use a snapshot of formData for this validation attempt
+        const currentData = { ...formData };
 
-        // Select the correct schema and data subset for the current step
+        console.log(`DEBUG: Validating step: ${currentStep}`);
+
+        // Select the appropriate schema and data subset for the current step
         if (currentStep === 'personal') {
             schema = personalSchema;
             dataToValidate = {
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                email: formData.email,
-                phone: formData.phone,
-                address: formData.address,
+                firstName: currentData.firstName, lastName: currentData.lastName, email: currentData.email,
+                phone: currentData.phone, address: currentData.address,
             };
         } else if (currentStep === 'loan') {
-            schema = loanSchema;
+            schema = loanSchema; // Use the dynamic loan schema
             dataToValidate = {
-                loanAmount: formData.loanAmount,
-                loanPurpose: formData.loanPurpose,
-                loanTerm: formData.loanTerm,
+                loanAmount: currentData.loanAmount,
+                loanPurpose: currentData.loanPurpose,
+                // Convert loanTerm string from state to number for validation
+                loanTerm: parseInt(currentData.loanTerm, 10) || null, // Use null if empty or NaN
             };
         } else if (currentStep === 'employment') {
             schema = employmentSchema;
             dataToValidate = {
-                employmentStatus: formData.employmentStatus,
-                employer: formData.employer,
-                income: formData.income === '' ? null : formData.income, // Handle empty string for optional number
-                startDate: formData.startDate === '' ? null : formData.startDate, // Handle empty string for optional date
+                employmentStatus: currentData.employmentStatus, employer: currentData.employer,
+                // Handle empty strings for optional number/date fields before validation
+                income: currentData.income === '' ? null : currentData.income,
+                startDate: currentData.startDate === '' ? null : currentData.startDate,
             };
         } else {
-            return true; // No validation needed for review or complete steps here
+            return true; // No validation needed for 'review' or 'complete' steps here
         }
 
         try {
-            // Validate the data subset
-            await schema.validate(dataToValidate, { abortEarly: false }); // Validate all fields
-            setErrors({}); // Clear errors if validation is successful
-            return true; // Indicate success
+            console.log("DEBUG: Data to validate:", dataToValidate);
+            // Perform validation, checking all fields (abortEarly: false)
+            await schema.validate(dataToValidate, { abortEarly: false });
+            setErrors({}); // Clear any previous errors on success
+            console.log("DEBUG: Validation successful for step:", currentStep);
+            return true; // Indicate validation passed
         } catch (err) {
+            // Handle Yup validation errors
             if (err instanceof Yup.ValidationError) {
-                // Transform Yup errors into a more usable format { fieldName: errorMessage }
+                // Convert Yup's error array into an object map { fieldName: errorMessage }
                 const formattedErrors = {};
                 err.inner.forEach(error => {
                     if (error.path && !formattedErrors[error.path]) { // Take the first error per field
                         formattedErrors[error.path] = error.message;
                     }
                 });
-                setErrors(formattedErrors);
+                setErrors(formattedErrors); // Update the errors state
+                console.error("Validation failed:", formattedErrors);
             } else {
-                console.error("Unexpected validation error:", err); // Log other errors
-                setErrors({ form: 'An unexpected error occurred during validation.' });
+                // Handle unexpected errors during validation process
+                console.error("Unexpected validation error:", err);
+                setErrors({ form: 'An unexpected error occurred. Please try again.' }); // Generic form error
             }
-            return false; // Indicate failure
+            return false; // Indicate validation failed
         }
-    }, [currentStep, formData]); // Dependencies for useCallback
+        // Dependencies ensure validateStep uses the latest state, step, and relevant schema
+    }, [currentStep, formData, loanSchema]); // Depends on step, data, and dynamic loan schema
 
-    // --- Step Navigation ---
-    const handleNextStep = async () => { // Make async to await validation
+
+    // --- Navigation Handlers (Memoized with useCallback) ---
+    // Moves to the next step after successful validation
+    const handleNextStep = useCallback(async () => {
         const isValid = await validateStep(); // Validate before proceeding
-
         if (!isValid) {
             return; // Stop if validation fails
         }
-
-        // Proceed if validation passed
+        // Determine the next step based on the current one
         if (currentStep === 'personal') setCurrentStep('loan');
         else if (currentStep === 'loan') setCurrentStep('employment');
         else if (currentStep === 'employment') setCurrentStep('review');
         else if (currentStep === 'review') {
-            // Submit form logic would go here (already validated up to this point)
-            console.log("Submitting Form Data:", formData);
-            setCurrentStep('complete');
-            // Show success toast
-            setToast({
-                message: 'Application submitted! Your loan application has been submitted successfully',
-                type: 'success'
-            });
-        }
-    };
+            // Final 'Submit' action from the review step
+            console.log("Submitting Form Data:", { ...formData, productName: product?.product_name }); // Log final data
+            setCurrentStep('complete'); // Transition to the completion view
 
-    const handlePrevStep = () => {
-        setErrors({}); // Clear errors when going back
+            // --- TODO: Add API call here to send formData to the backend ---
+
+            const dataSent = {
+                customer_id: 1,
+                product_id: product?.product_id,
+                requested_amount: formData.loanAmount,
+                requested_term: formData.loanTerm,
+                purpose: formData.loanPurpose,
+                status: 'pending'
+            }
+            try {
+                const response = await fetch('http://localhost:8000/api/loans/apply', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    },
+                    body: JSON.stringify(dataSent), // Send relevant data
+                });
+                if (!response.ok) throw new Error('Submission failed');
+                // Handle success further if needed
+                setToast({
+                    message: `Application for ${product?.product_name ?? 'loan'} submitted successfully!`,
+                    type: 'success'
+                });
+            } catch (apiError) {
+                console.error("API Submission Error:", apiError);
+                setToast({ message: 'Failed to submit application. Please try again.', type: 'error' });
+                setCurrentStep('review'); // Optionally move back to review step on failure
+            }
+            // --- End TODO ---
+        }
+    }, [currentStep, validateStep, product, formData]); // Dependencies
+
+    // Moves to the previous step
+    const handlePrevStep = useCallback(() => {
+        console.log(`DEBUG: Moving back from step: ${currentStep}`);
+        setErrors({}); // Clear validation errors when navigating back
+        // Determine the step to go back to
         if (currentStep === 'loan') setCurrentStep('personal');
         else if (currentStep === 'employment') setCurrentStep('loan');
         else if (currentStep === 'review') setCurrentStep('employment');
-    };
+    }, [currentStep]); // Dependency: currentStep
 
-    // --- Formatting ---
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(amount);
-    };
 
-    // --- Animation Variants ---
-    const stepVariants = {
+    // --- Animation Variants and Progress Stepper Logic ---
+    const stepVariants = { // Animation definitions for step transitions
         hidden: { opacity: 0, x: 20 },
         visible: { opacity: 1, x: 0 },
         exit: { opacity: 0, x: -20 },
     };
+    const stepsArray = ['personal', 'loan', 'employment', 'review']; // Define the order of steps
+    const currentStepIndex = stepsArray.indexOf(currentStep); // Get index of the current step
 
-    // --- Progress Stepper Logic ---
-    const stepsArray = ['personal', 'loan', 'employment', 'review'];
-    const currentStepIndex = stepsArray.indexOf(currentStep);
-
-    const getStepClass = (index) => {
-        if (index === currentStepIndex) return 'bg-blue-600';
-        if (index < currentStepIndex) return 'bg-green-500';
-        return 'bg-gray-300';
+    // --- Stepper Styling Helper Functions ---
+    const getStepClass = (index) => { // Determines class for the step circle
+        if (index === currentStepIndex) return 'bg-blue-600 scale-110 shadow-md'; // Active step style
+        if (index < currentStepIndex) return 'bg-green-500'; // Completed step style
+        return 'bg-gray-300'; // Future step style
     };
 
-    const getConnectorClass = (index) => {
-        if (index < currentStepIndex) return 'bg-green-500';
-        return 'bg-gray-300';
+    const getConnectorClass = (index) => { // Determines class for the connector line
+        if (index < currentStepIndex) return 'bg-green-500'; // Connector after completed step
+        return 'bg-gray-300'; // Connector for future steps
     };
 
-    // --- Helper to render input with error ---
-    // This makes the JSX cleaner
+    // --- Reusable Render Functions for Form Fields ---
+    // Renders a standard input field with label and error message
     const renderInput = (id, name, label, type = 'text', props = {}) => (
-        <div className="space-y-1"> {/* Reduced space for error */}
+        <div className="space-y-1">
             <label htmlFor={id} className="block text-sm font-medium text-gray-700">{label}</label>
             <input
                 id={id}
                 name={name}
                 type={type}
-                value={formData[name]}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border ${errors[name] ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                {...props} // Spread additional props like placeholder
+                value={formData[name]} // Controlled component
+                onChange={handleInputChange} // Update state on change
+                aria-invalid={!!errors[name]} // Accessibility: indicate invalid state
+                aria-describedby={errors[name] ? `${id}-error` : undefined} // Link input to error message
+                className={`block w-full px-3 py-2 border ${errors[name] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'} rounded-md shadow-sm focus:outline-none focus:ring-1 sm:text-sm transition-colors duration-150 ease-in-out`}
+                {...props} // Allow passing additional props like placeholder, readOnly
             />
-            {errors[name] && <p className="text-red-500 text-xs mt-1">{errors[name]}</p>}
+            {/* Display validation error if exists */}
+            {errors[name] && <p id={`${id}-error`} className="text-red-600 text-xs mt-1">{errors[name]}</p>}
         </div>
     );
 
+    // Renders a select dropdown with label and error message
     const renderSelect = (id, name, label, options, props = {}) => (
         <div className="space-y-1">
             <label htmlFor={id} className="block text-sm font-medium text-gray-700">{label}</label>
             <select
                 id={id}
                 name={name}
-                value={formData[name]}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border ${errors[name] ? 'border-red-500' : 'border-gray-300'} rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white`}
+                value={formData[name]} // Controlled component
+                onChange={handleInputChange} // Update state on change
+                aria-invalid={!!errors[name]} // Accessibility
+                aria-describedby={errors[name] ? `${id}-error` : undefined}
+                className={`block w-full px-3 py-2 pr-8 border ${errors[name] ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'} rounded-md shadow-sm focus:outline-none focus:ring-1 bg-white sm:text-sm appearance-none transition-colors duration-150 ease-in-out`}
                 {...props}
             >
+                {/* Default placeholder option */}
+                <option value="" disabled>
+                    {props.placeholder || "Select..."}
+                </option>
+                {/* Map through the provided term options */}
                 {options.map(opt => (
                     <option key={opt.value} value={opt.value} disabled={opt.disabled}>
                         {opt.label}
                     </option>
                 ))}
             </select>
-            {errors[name] && <p className="text-red-500 text-xs mt-1">{errors[name]}</p>}
+            {/* Display validation error if exists */}
+            {errors[name] && <p id={`${id}-error`} className="text-red-600 text-xs mt-1">{errors[name]}</p>}
         </div>
     );
 
-    // --- Render Step Content ---
+    // --- Render Step Content Function ---
+    // Determines which form section to display based on currentStep state
     const renderStepContent = () => {
         switch (currentStep) {
             case 'personal':
                 return (
-                    <motion.div
-                        key="personal"
-                        variants={stepVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.4 }}
-                        className="space-y-6"
-                    >
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-semibold">Personal Information</h2>
-                            <p className="text-gray-500">Please provide your personal details.</p>
-                            {errors.form && <p className="text-red-500 text-sm">{errors.form}</p>} {/* General form error */}
+                    // Personal Information Step JSX
+                    <motion.div key="personal" variants={stepVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.4 }} className="space-y-6">
+                        <div className="space-y-1">
+                            <h2 className="text-2xl font-semibold text-gray-900">Personal Information</h2>
+                            <p className="text-sm text-gray-500">Please provide your personal details.</p>
+                            {/* Display general form error if exists */}
+                            {errors.form && <p className="text-red-600 text-sm font-medium mt-2">{errors.form}</p>}
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4"> {/* Adjusted gap */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                             {renderInput('firstName', 'firstName', 'First Name')}
                             {renderInput('lastName', 'lastName', 'Last Name')}
                             {renderInput('email', 'email', 'Email Address', 'email')}
-                            {renderInput('phone', 'phone', 'Phone Number', 'tel')}
+                            {renderInput('phone', 'phone', 'Phone Number', 'tel', { placeholder: 'e.g., 08012345678' })}
                             <div className="md:col-span-2">
                                 {renderInput('address', 'address', 'Home Address')}
                             </div>
@@ -282,224 +421,215 @@ const LoanApplicationForm = () => {
 
             case 'loan':
                 return (
-                    <motion.div
-                        key="loan"
-                        variants={stepVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.4 }}
-                        className="space-y-6"
-                    >
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-semibold">Loan Details</h2>
-                            <p className="text-gray-500">Tell us about the loan you need.</p>
-                            {errors.form && <p className="text-red-500 text-sm">{errors.form}</p>}
+                    // Loan Details Step JSX
+                    <motion.div key="loan" variants={stepVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.4 }} className="space-y-6">
+                        <div className="space-y-1">
+                            <h2 className="text-2xl text-center font-semibold text-gray-900">Loan Details</h2>
+
+                            {errors.form && <p className="text-red-600 text-sm font-medium mt-2">{errors.form}</p>}
                         </div>
-                        <div className="space-y-6"> {/* Adjusted spacing */}
-                            <div className="space-y-2"> {/* Reduced space for error */}
-                                <label htmlFor="loanAmountSlider" className="block text-sm font-medium text-gray-700">Loan Amount: {formatCurrency(formData.loanAmount)}</label>
+                        <div className="space-y-5"> {/* Adjusted spacing */}
+                            {/* Loan Type (Display Only) */}
+                            <div className="space-y-1.5 mb-16">
+                                <label htmlFor="loanAmountSlider" className="flex gap-2 items-center text-lg font-medium text-gray-700">
+                                    Loan Type: <span className='font-semibold text-lg text-gray-900'>{formData.loanPurpose}</span>
+                                </label>
+                            </div>
+
+                            {/* Loan Amount Slider */}
+                            <div className="space-y-1.5 mb-16">
+                                <label htmlFor="loanAmountSlider" className="flex gap-2 items-center text-lg font-medium text-gray-700">
+                                    Loan Amount: <span className='font-semibold text-lg text-gray-900'>{formatCurrency(formData.loanAmount)}</span>
+                                </label>
                                 <input
                                     type="range"
                                     id="loanAmountSlider"
                                     name="loanAmount"
                                     value={formData.loanAmount}
-                                    max={50000}
-                                    min={1000}
-                                    step={1000}
+                                    min={minAmount} // Use derived min value
+                                    max={maxAmount} // Use derived max value
+                                    // Dynamic step for better usability across different ranges
+                                    step={Math.max(1000, Math.round((maxAmount - minAmount) / 100))}
                                     onChange={handleSliderChange}
-                                    className={`w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500 ${errors.loanAmount ? 'border border-red-500 ring-1 ring-red-500' : ''}`} // Add error styling hint
+                                    aria-describedby={errors.loanAmount ? `loanAmountSlider-error` : undefined}
+                                    className={`w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500 ${errors.loanAmount ? 'ring-2 ring-offset-1 ring-red-500' : ''}`}
                                 />
-                                <div className="flex justify-between text-sm text-gray-500">
-                                    <span>$1,000</span>
-                                    <span>$50,000</span>
+                                <div className="flex justify-between text-xs text-gray-500 px-1">
+                                    <span>{formatCurrency(minAmount)}</span>
+                                    <span>{formatCurrency(maxAmount)}</span>
                                 </div>
-                                {errors.loanAmount && <p className="text-red-500 text-xs mt-1">{errors.loanAmount}</p>}
+                                {/* Error message specifically for the slider */}
+                                {errors.loanAmount && <p id="loanAmountSlider-error" className="text-red-600 text-xs mt-1">{errors.loanAmount}</p>}
                             </div>
 
-                            {renderSelect('loanPurpose', 'loanPurpose', 'Loan Purpose', [
-                                { value: "", label: "Select purpose", disabled: true },
-                                { value: "home-improvement", label: "Home Improvement" },
-                                { value: "debt-consolidation", label: "Debt Consolidation" },
-                                { value: "major-purchase", label: "Major Purchase" },
-                                { value: "education", label: "Education" },
-                                { value: "other", label: "Other" },
-                            ])}
-
-                            {renderSelect('loanTerm', 'loanTerm', 'Loan Term', [
-                                { value: "", label: "Select term", disabled: true },
-                                { value: "12", label: "12 months" },
-                                { value: "24", label: "24 months" },
-                                { value: "36", label: "36 months" },
-                                { value: "48", label: "48 months" },
-                                { value: "60", label: "60 months" },
-                            ])}
+                            {/* Loan Term Selection */}
+                            {renderSelect(
+                                'loanTerm',
+                                'loanTerm',
+                                'Loan Term',
+                                termOptions, // Use dynamically generated term options
+                                { placeholder: "Select desired term" }
+                            )}
                         </div>
                     </motion.div>
                 );
 
             case 'employment':
                 return (
-                    <motion.div
-                        key="employment"
-                        variants={stepVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.4 }}
-                        className="space-y-6"
-                    >
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-semibold">Employment Information</h2>
-                            <p className="text-gray-500">Please provide your employment details.</p>
-                            {errors.form && <p className="text-red-500 text-sm">{errors.form}</p>}
+                    // Employment Information Step JSX
+                    <motion.div key="employment" variants={stepVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.4 }} className="space-y-6">
+                        <div className="space-y-1">
+                            <h2 className="text-2xl font-semibold text-gray-900">Employment Information</h2>
+                            <p className="text-sm text-gray-500">Please provide your current employment details.</p>
+                            {errors.form && <p className="text-red-600 text-sm font-medium mt-2">{errors.form}</p>}
                         </div>
-                        <div className="space-y-4"> {/* Adjusted spacing */}
+                        <div className="space-y-4">
                             {renderSelect('employmentStatus', 'employmentStatus', 'Employment Status', [
-                                { value: "", label: "Select status", disabled: true },
-                                { value: "full-time", label: "Full-Time" },
-                                { value: "part-time", label: "Part-Time" },
-                                { value: "self-employed", label: "Self-Employed" },
+                                { value: "full-time", label: "Full-Time Employed" },
+                                { value: "part-time", label: "Part-Time Employed" },
+                                { value: "self-employed", label: "Self-Employed / Business Owner" },
                                 { value: "unemployed", label: "Unemployed" },
                                 { value: "retired", label: "Retired" },
-                            ])}
+                                { value: "student", label: "Student" },
+                            ], { placeholder: "Select employment status" })}
 
-                            {/* Conditionally render based on status if needed, but validation handles requirement */}
-                            {renderInput('employer', 'employer', 'Employer Name')}
-
-                            {renderInput('income', 'income', 'Annual Income', 'number', { placeholder: '$' })}
-
+                            {/* Conditional fields based on status are handled by Yup validation rules */}
+                            {renderInput('employer', 'employer', 'Employer / Company Name')}
+                            {/* Use the determined currency symbol in the label */}
+                            {renderInput('income', 'income', `Annual Income (${currency})`, 'number', { placeholder: 'e.g., 3000000' })}
                             {renderInput('startDate', 'startDate', 'Employment Start Date', 'date')}
                         </div>
                     </motion.div>
                 );
 
             case 'review':
-                // (Review step remains largely the same, just displays data)
+                // Review Application Step JSX
                 return (
-                    <motion.div
-                        key="review"
-                        variants={stepVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.4 }}
-                        className="space-y-6"
-                    >
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-semibold">Review Application</h2>
-                            <p className="text-gray-500">Please review your information before submitting.</p>
+                    <motion.div key="review" variants={stepVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.4 }} className="space-y-6">
+                        <div className="space-y-1">
+                            <h2 className="text-2xl font-semibold text-gray-900">Review Application</h2>
+                            <p className="text-sm text-gray-500">Please check all your information carefully before submitting.</p>
                         </div>
-                        <div className="space-y-6">
-                            {/* Personal Info Review */}
-                            <div className="bg-white border border-gray-200 p-4 rounded-xl">
-                                <h3 className="font-medium mb-3">Personal Information</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    <div><span className="text-gray-500">Name:</span><p className="text-gray-800">{formData.firstName} {formData.lastName}</p></div>
-                                    <div><span className="text-gray-500">Email:</span><p className="text-gray-800">{formData.email}</p></div>
-                                    <div><span className="text-gray-500">Phone:</span><p className="text-gray-800">{formData.phone}</p></div>
-                                    <div><span className="text-gray-500">Address:</span><p className="text-gray-800">{formData.address}</p></div>
-                                </div>
+                        {/* Use dividers for better separation of review sections */}
+                        <div className="space-y-5 divide-y divide-gray-100 border border-gray-200 rounded-lg p-4 sm:p-6">
+                            {/* Personal Info Review Section */}
+                            <div className="pt-0 sm:pt-0"> {/* Adjust padding */}
+                                <h3 className="text-base font-semibold text-gray-800 mb-3">Personal Information</h3>
+                                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                                    <div className="sm:col-span-1"><dt className="text-gray-500">Name:</dt><dd className="text-gray-900 mt-0.5">{formData.firstName} {formData.lastName}</dd></div>
+                                    <div className="sm:col-span-1"><dt className="text-gray-500">Email:</dt><dd className="text-gray-900 mt-0.5 break-words">{formData.email}</dd></div>
+                                    <div className="sm:col-span-1"><dt className="text-gray-500">Phone:</dt><dd className="text-gray-900 mt-0.5">{formData.phone}</dd></div>
+                                    <div className="sm:col-span-2"><dt className="text-gray-500">Address:</dt><dd className="text-gray-900 mt-0.5">{formData.address}</dd></div>
+                                </dl>
                             </div>
-                            {/* Loan Details Review */}
-                            <div className="bg-white border border-gray-200 p-4 rounded-xl">
-                                <h3 className="font-medium mb-3">Loan Details</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    <div><span className="text-gray-500">Amount:</span><p className="text-gray-800">{formatCurrency(formData.loanAmount)}</p></div>
-                                    <div><span className="text-gray-500">Purpose:</span><p className="text-gray-800">{formData.loanPurpose || 'N/A'}</p></div>
-                                    <div><span className="text-gray-500">Term:</span><p className="text-gray-800">{formData.loanTerm ? `${formData.loanTerm} months` : 'N/A'}</p></div>
-                                </div>
+                            {/* Loan Details Review Section */}
+                            <div className="pt-5">
+                                <h3 className="text-base font-semibold text-gray-800 mb-3">Loan Details</h3>
+                                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                                    <div><dt className="text-gray-500">Amount:</dt><dd className="text-gray-900 font-semibold mt-0.5">{formatCurrency(formData.loanAmount)}</dd></div>
+                                    <div><dt className="text-gray-500">Purpose/Type:</dt><dd className="text-gray-900 mt-0.5">{formData.loanPurpose || 'N/A'}</dd></div>
+                                    <div><dt className="text-gray-500">Term:</dt><dd className="text-gray-900 mt-0.5">{formData.loanTerm ? `${formData.loanTerm} months` : 'N/A'}</dd></div>
+                                </dl>
                             </div>
-                            {/* Employment Info Review */}
-                            <div className="bg-white border border-gray-200 p-4 rounded-xl">
-                                <h3 className="font-medium mb-3">Employment Information</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    <div><span className="text-gray-500">Status:</span><p className="text-gray-800">{formData.employmentStatus || 'N/A'}</p></div>
-                                    <div><span className="text-gray-500">Employer:</span><p className="text-gray-800">{formData.employer || 'N/A'}</p></div>
-                                    <div><span className="text-gray-500">Income:</span><p className="text-gray-800">{formData.income ? `$${Number(formData.income).toLocaleString()}` : 'N/A'}</p></div>
-                                    <div><span className="text-gray-500">Start Date:</span><p className="text-gray-800">{formData.startDate || 'N/A'}</p></div>
-                                </div>
+                            {/* Employment Info Review Section */}
+                            <div className="pt-5">
+                                <h3 className="text-base font-semibold text-gray-800 mb-3">Employment Information</h3>
+                                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                                    <div><dt className="text-gray-500">Status:</dt><dd className="text-gray-900 mt-0.5">{formData.employmentStatus || 'N/A'}</dd></div>
+                                    <div><dt className="text-gray-500">Employer/Business:</dt><dd className="text-gray-900 mt-0.5">{formData.employer || 'N/A'}</dd></div>
+                                    <div><dt className="text-gray-500">Annual Income:</dt><dd className="text-gray-900 mt-0.5">{formData.income ? formatCurrency(Number(formData.income)) : 'N/A'}</dd></div>
+                                    <div><dt className="text-gray-500">Start Date:</dt><dd className="text-gray-900 mt-0.5">{formData.startDate || 'N/A'}</dd></div>
+                                </dl>
                             </div>
                         </div>
                     </motion.div>
                 );
 
             case 'complete':
-                // (Complete step remains the same)
+                // Complete step JSX - unchanged from previous versions
                 return (
                     <>
-
-                        <motion.div
-                            key="complete"
-                            variants={stepVariants}
-                            initial="hidden"
-                            animate="visible"
-                            exit="exit"
-                            transition={{ duration: 0.4 }}
-                            className="space-y-8 text-center py-12"
-                        >
+                        <motion.div key="complete" variants={stepVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.4 }} className="space-y-8 text-center py-12">
+                            {/* Toast notification display */}
                             {toast && (
                                 <Toast
                                     message={toast.message}
                                     type={toast.type}
-                                    onClose={() => setToast(null)}
+                                    onClose={() => setToast(null)} // Allow closing the toast
                                 />
                             )}
+                            {/* Success Icon Animation */}
                             <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+                                transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
                                 className="mx-auto"
                             >
-                                <div className="w-24 h-24 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-                                    <CheckCircle className="w-12 h-12 text-green-600" />
+                                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto ring-4 ring-green-50"> {/* Adjusted size/ring */}
+                                    <CheckCircle className="w-10 h-10 text-green-600" />
                                 </div>
                             </motion.div>
-                            <div className="space-y-3">
-                                <h2 className="text-2xl font-semibold">Application Submitted!</h2>
-                                <p className="text-gray-500 max-w-md mx-auto">
-                                    Thank you for submitting your loan application. We'll review it shortly and get back to you within 24-48 hours.
+                            {/* Confirmation Message */}
+                            <div className="space-y-2">
+                                <h2 className="text-2xl font-semibold text-gray-900">Application Submitted!</h2>
+                                <p className="text-gray-600 max-w-md mx-auto text-sm">
+                                    Thank you for applying{product ? ` for the ${product.product_name}` : ''}. We'll review your application and get back to you within 24-48 business hours.
                                 </p>
                             </div>
-                            <div className="pt-6">
-                                <div className="bg-white border border-gray-200 p-4 rounded-xl max-w-xs mx-auto">
-                                    <div className="text-sm">
-                                        <div className="flex justify-between py-2">
-                                            <span className="text-gray-500">Application ID:</span>
-                                            <span className="font-medium text-gray-800">BL-{Math.floor(100000 + Math.random() * 900000)}</span>
+                            {/* Application Summary (Optional) */}
+                            <div className="pt-4">
+                                <div className="bg-gray-50 border border-gray-200 p-4 rounded-lg max-w-xs mx-auto text-left"> {/* Adjusted styling */}
+                                    <div className="text-xs space-y-2">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500">Application Ref:</span>
+                                            <span className="font-medium text-gray-700">BL-{Math.floor(100000 + Math.random() * 900000)}</span>
                                         </div>
                                         <hr className="border-gray-100" />
-                                        <div className="flex justify-between py-2">
-                                            <span className="text-gray-500">Submitted:</span>
-                                            <span className="font-medium text-gray-800">{new Date().toLocaleDateString()}</span>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-500">Submitted Date:</span>
+                                            <span className="font-medium text-gray-700">{new Date().toLocaleDateString('en-GB')}</span> {/* UK format DD/MM/YYYY */}
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </motion.div>
                     </>
-
                 );
+
             default:
-                return null;
+                return null; // Should not happen
         }
     };
 
-    // --- Main Return ---
+
+    // --- Main Component Return ---
     return (
         <div className="bg-white inter border border-gray-200 rounded-2xl p-6 md:p-8 max-w-4xl mx-auto shadow-lg">
-            {/* Progress Stepper */}
+
+            {/* Progress Stepper (Rendered unless complete) */}
             {currentStep !== 'complete' && (
                 <div className="mb-8">
-                    <div className="flex items-center mb-8">
+                    <div className="flex items-center mb-4 sm:mb-8"> {/* Adjusted margin */}
                         {stepsArray.map((step, index) => (
                             <React.Fragment key={step}>
-                                <div className="flex flex-col items-center">
+                                <div className="flex flex-col items-center text-center flex-shrink-0 mx-1 sm:mx-2"> {/* Added shrinking and margin */}
+                                    {/* Stepper Dot */}
                                     <motion.div
                                         initial={false}
-                                        animate={{
-                                            // Simple scale animation for active step
-                                            scale: index === currentStepIndex ? 1.1 : 1,
-                                        }}
+                                        animate={{ scale: index === currentStepIndex ? 1.15 : 1 }} // Slightly larger scale
                                         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                                        className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-medium text-sm ${getStepClass(index)} transition-colors duration-300`}
+                                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white font-medium text-xs sm:text-sm ${getStepClass(index)} transition-colors duration-300 shadow-sm`}
                                     >
                                         {index + 1}
                                     </motion.div>
-                                    <div className="text-xs mt-1 hidden sm:block capitalize text-gray-600">
+                                    {/* Stepper Label */}
+                                    <div className="text-xs mt-1.5 hidden sm:block capitalize text-gray-600 font-medium">
                                         {step.replace('-', ' ')} {/* Simple formatting */}
                                     </div>
                                 </div>
+                                {/* Connector Line */}
                                 {index < stepsArray.length - 1 && (
-                                    <div className={`flex-1 h-0.5 mx-2 ${getConnectorClass(index)} transition-colors duration-300`} />
+                                    <div className={`flex-1 h-0.5 ${getConnectorClass(index)} transition-colors duration-300 mt-[-16px] sm:mt-[-20px]`} />
                                 )}
                             </React.Fragment>
                         ))}
@@ -509,45 +639,47 @@ const LoanApplicationForm = () => {
             )}
 
             {/* Step Content Area */}
-            <div className="mt-8">
-                {/* Using AnimatePresence might be smoother for transitions if steps unmount/remount */}
-                {/* <AnimatePresence mode="wait"> */}
+            <div className="mt-8 min-h-[350px] md:min-h-[400px]"> {/* Ensure minimum height for content area */}
+                {/* Render the content for the current step */}
                 {renderStepContent()}
-                {/* </AnimatePresence> */}
             </div>
 
-            {/* Navigation Buttons */}
+            {/* Navigation Buttons (Rendered unless complete) */}
             {currentStep !== 'complete' && (
-                <div className={`flex mt-10 ${currentStep === 'personal' ? 'justify-end' : 'justify-between'}`}>
+                <div className={`flex mt-10 pt-6 border-t border-gray-100 ${currentStep === 'personal' ? 'justify-end' : 'justify-between'}`}>
+                    {/* Back Button (Rendered on steps after the first) */}
                     {currentStep !== 'personal' && (
                         <button
                             type="button"
                             onClick={handlePrevStep}
-                            className="px-4 py-2 border cursor-pointer border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                            className="px-5 py-2 border cursor-pointer border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 transition-colors"
                         >
                             Back
                         </button>
                     )}
+                    {/* Continue/Submit Button */}
                     <button
                         type="button"
                         onClick={handleNextStep}
-                        className="px-4 py-2 border cursor-pointer border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        className="px-5 py-2 border cursor-pointer border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 transition-colors"
                     >
                         {currentStep === 'review' ? 'Submit Application' : 'Continue'}
                     </button>
                 </div>
             )}
 
-            {/* Completion Button */}
+            {/* Completion Actions (Rendered only on complete step) */}
             {currentStep === 'complete' && (
-                <div className="mt-10 flex justify-center">
+                <div className="mt-10 flex justify-center pt-6 border-t border-gray-100">
+                    {/* Example: Link to a dashboard or loans page */}
                     <button
                         type="button"
-                        onClick={() => window.location.href = '/my-loans'} // Simple redirect
-                        className="px-4 py-2 border cursor-pointer border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        onClick={() => { console.log("Navigate to /my-loans"); window.location.href = '/my-loans'; }} // Simple redirect for now
+                        className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 transition-colors"
                     >
                         Go to My Loans
                     </button>
+                    {/* Could add another button like "Apply for Another Loan" */}
                 </div>
             )}
         </div>

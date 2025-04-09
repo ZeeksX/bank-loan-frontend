@@ -1,5 +1,5 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React from 'react';
+import { Link } from 'react-router-dom';
 
 const ProductCard = ({ product }) => {
     return (
@@ -20,7 +20,8 @@ const ProductCard = ({ product }) => {
                 <div className="font-medium text-gray-900">₦{product.min_amount} - ₦{product.max_amount}</div>
             </div>
             <p className="text-sm text-gray-500 mb-4">{product.description}</p>
-            <Link to={`/apply/${product.id}`}>
+            {/* Updated Link syntax for react-router v6 */}
+            <Link to="/apply" state={{ product }}>
                 <button className="w-full cursor-pointer px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-blue-500 hover:text-white transition-colors">
                     Apply Now
                 </button>
@@ -29,4 +30,4 @@ const ProductCard = ({ product }) => {
     )
 }
 
-export default ProductCard
+export default ProductCard;
