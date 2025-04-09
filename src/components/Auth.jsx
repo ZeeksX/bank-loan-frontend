@@ -44,9 +44,9 @@ export const AuthProvider = ({ children }) => {
                 body: JSON.stringify({ refresh: refresh_token }),
             });
             const data = await response.json();
-            if (response.ok && data.access) {
-                localStorage.setItem("access_token", data.access);
-                setupTokenRefresh(data.access); // Setup the next refresh
+            if (response.ok && data.access_token) {
+                localStorage.setItem("access_token", data.access_token);
+                setupTokenRefresh(data.access_token); // Setup the next refresh
                 return true;
             } else {
                 // If refresh fails, log out the user.

@@ -208,7 +208,7 @@ const MyLoans = () => {
 
     return (
         <>
-            <div className="w-[95vw] mx-auto p-4 md:p-6"> {/* Added padding */}
+            <div className="w-[95vw] inter mx-auto p-4 md:p-6"> {/* Added padding */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>
                         {/* Heading animations */}

@@ -173,7 +173,7 @@ const Profile = () => {
   // --- Main Return ---
   return (
     // Replaced AppLayout and PageTransition with divs, added padding
-    <div className="bg-gray-50 min-h-screen py-8 w-full">
+    <div className="bg-gray-50 min-h-screen py-8 w-full inter">
       <div className="max-w-5xl mx-auto p-4 md:p-6">
         {/* Profile Header Card */}
         <motion.div

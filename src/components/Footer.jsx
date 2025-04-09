@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 
 const Footer = () => {
     return (
-        <footer className="inter py-8 bg-secondary/50 backdrop-blur-sm">
+        <footer className="inter py-4 bg-secondary/50 backdrop-blur-sm">
             <div className="container mx-auto px-6">
                 <div className="flex flex-col md:flex-row justify-between items-center">
                     <div className="mb-4 md:mb-0">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight, BarChart3, CreditCard, DollarSign, LineChart, Wallet } from 'lucide-react';
@@ -77,7 +77,7 @@ const cardData = [
 const ProductData = [
   {
     id: 1,
-    title: 'Personal Loan',
+    product_name: 'Personal Loan',
     rate: '9.5%',
     term: '12-60 months',
     amount: 'Up to $50,000',
@@ -85,7 +85,7 @@ const ProductData = [
   },
   {
     id: 2,
-    title: 'Education Loan',
+    product_name: 'Education Loan',
     rate: '6.25%',
     term: '12-120 months',
     amount: 'Up to $100,000',
@@ -93,14 +93,44 @@ const ProductData = [
   },
   {
     id: 3,
-    title: 'Debt Consolidation',
+    product_name: 'Debt Consolidation',
     rate: '10.75%',
     term: '12-72 months',
     amount: 'Up to $75,000',
     description: 'Simplify your finances by combining multiple debts',
   },
 ]
+
 const Container = () => {
+  const [productData, setProductData] = useState([]);
+  const ProductData = productData.slice(0, 3);
+  //Fetch all loan products
+  useEffect(() => {
+    const fetchLoanProducts = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/loans/products', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(data)
+        setProductData(data)
+
+      } catch (error) {
+        console.error('Error fetching loan products: ', error);
+      }
+    };
+
+    fetchLoanProducts();
+  }, []);
+
   return (
     <div className="inter min-h-screen flex justify-center items-center bg-gray-50">
       <div className="w-[92%] mx-auto py-8">
@@ -250,7 +280,7 @@ const Container = () => {
             </div>
 
             <Link to="/products">
-              <button className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors mt-4 md:mt-0">
+              <button className="px-4 py-2 border cursor-pointer border-gray-300 rounded-lg text-gray-700 hover:bg-blue-500 hover:text-white transition-colors mt-4 md:mt-0">
                 View All Products
               </button>
             </Link>
