@@ -16,6 +16,7 @@ import Profile from "./components/customer/Profile";
 import MyLoans from "./components/customer/MyLoans";
 import Apply from "./components/customer/Apply";
 import CustomerProducts from "./components/customer/CustomerProducts";
+import Payments from "./components/customer/Payments";
 
 // ProtectedRoute ensures that the children are rendered only if the user is authenticated.
 const ProtectedRoute = ({ children }) => {
@@ -93,6 +94,7 @@ const App = () => {
             <Route path="my-loans" element={<MyLoans />} />
             <Route path="profile" element={<Profile />} />
             <Route path="products" element={<CustomerProducts />} />
+            <Route path="payments" element={<Payments />} />
           </Route>
         </Routes>
       </Router>

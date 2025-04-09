@@ -4,38 +4,8 @@ import { motion } from 'framer-motion';
 import { ArrowRight, BarChart3, CreditCard, DollarSign, LineChart, Wallet } from 'lucide-react';
 import DashboardCard from '../ui/DashboardCard';
 import ProductCard from '../ui/ProductCard';
-
-const loanStatusSteps = [
-  {
-    id: 1,
-    title: 'Application Submitted',
-    description: 'Your loan application has been received.',
-    completed: true,
-    date: '12/05/2023',
-  },
-  {
-    id: 2,
-    title: 'Verification Process',
-    description: 'We are verifying your personal and financial information.',
-    completed: true,
-    date: '12/06/2023',
-  },
-  {
-    id: 3,
-    title: 'Loan Approval',
-    description: 'Your loan is being reviewed for approval.',
-    completed: false,
-    isActive: true,
-    date: 'Pending',
-  },
-  {
-    id: 4,
-    title: 'Disbursement',
-    description: 'The approved loan amount will be disbursed to your account.',
-    completed: false,
-    date: 'Pending',
-  },
-];
+import LoanStatus from './LoanStatus';
+import RecentPayments from './RecentPayments';
 
 const cardData = [
   {
@@ -144,69 +114,13 @@ const Container = () => {
           {/* Loan Status */}
           <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 className="text-xl font-semibold mb-6">Loan Application Status</h2>
-            <div className="space-y-8">
-              {loanStatusSteps.map((step, index) => (
-                <div key={step.id} className="flex items-start">
-                  <div className="flex flex-col items-center mr-4">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step.completed ? 'bg-green-500' : step.isActive ? 'bg-blue-600' : 'bg-gray-200'
-                      }`}>
-                      {step.completed ? (
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                      ) : (
-                        <span className={`text-sm font-medium ${step.isActive ? 'text-white' : 'text-gray-500'
-                          }`}>
-                          {step.id}
-                        </span>
-                      )}
-                    </div>
-                    {index < loanStatusSteps.length - 1 && (
-                      <div className={`w-0.5 h-12 ${step.completed ? 'bg-green-500' : 'bg-gray-200'}`} />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className={`font-medium ${step.isActive ? 'text-blue-600' : step.completed ? 'text-gray-900' : 'text-gray-500'
-                      }`}>
-                      {step.title}
-                    </h3>
-                    <p className="text-gray-500 text-sm mt-1">{step.description}</p>
-                    <p className="text-gray-400 text-xs mt-2">{step.date}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <LoanStatus />
           </div>
 
           {/* Recent Payments */}
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 className="text-xl font-semibold mb-6">Recent Payments</h2>
-
-            <div className="space-y-4">
-              {[
-                { id: 1, loan: 'Home Renovation Loan', amount: '$540', date: 'May 15, 2023', status: 'Completed' },
-                { id: 2, loan: 'Education Loan', amount: '$280', date: 'May 10, 2023', status: 'Completed' },
-                { id: 3, loan: 'Car Loan', amount: '$450', date: 'May 5, 2023', status: 'Completed' },
-              ].map((payment) => (
-                <motion.div
-                  key={payment.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: payment.id * 0.1 }}
-                  className="flex justify-between items-center p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div>
-                    <div className="font-medium text-gray-900">{payment.loan}</div>
-                    <div className="text-sm text-gray-500">{payment.date}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-medium text-gray-900">{payment.amount}</div>
-                    <div className="text-sm text-green-500">{payment.status}</div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-
+            <RecentPayments />
             <div className="mt-6">
               <Link
                 to="/payments"

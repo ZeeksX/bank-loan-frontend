@@ -277,21 +277,23 @@ const LoanApplicationForm = ({ product }) => {
             setCurrentStep('complete'); // Transition to the completion view
 
             // --- TODO: Add API call here to send formData to the backend ---
+            const user = JSON.parse(localStorage.getItem('user')); // Parse the stored user object
+            const token = localStorage.getItem('access_token');
 
             const dataSent = {
-                customer_id: 1,
+                customer_id: user?.customerId,
                 product_id: product?.product_id,
                 requested_amount: formData.loanAmount,
                 requested_term: formData.loanTerm,
                 purpose: formData.loanPurpose,
-                status: 'pending'
             }
+
             try {
                 const response = await fetch('http://localhost:8000/api/loans/apply', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify(dataSent), // Send relevant data
                 });

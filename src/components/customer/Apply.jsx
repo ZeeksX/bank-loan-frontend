@@ -13,18 +13,14 @@ const Apply = () => {
   // Initialize based on whether product exists initially
   const [isRedirecting, setIsRedirecting] = useState(!product);
 
-  console.log("Apply page - Product received:", product);
-
   // Effect to handle redirection if no product is provided
   useEffect(() => {
     let redirectTimer = null; // To store the timeout ID
 
     if (!product) {
-      console.log("Apply page - No product found, starting redirect timer...");
       setIsRedirecting(true); // Make sure redirect state is true
       // Set a timer to navigate back to products page
       redirectTimer = setTimeout(() => {
-        console.log("Apply page - Redirecting now...");
         navigate("/products", { replace: true }); // Use replace to avoid adding to history
       }, 1000); // 1-second delay
     } else {
@@ -36,7 +32,6 @@ const Apply = () => {
     // or if the dependencies (product, navigate) change.
     return () => {
       if (redirectTimer) {
-        console.log("Apply page - Clearing redirect timer.");
         clearTimeout(redirectTimer); // Clear the timeout if component unmounts
       }
     };
