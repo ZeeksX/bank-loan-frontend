@@ -61,7 +61,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="w-64 min-h-screen bg-white shadow-md flex flex-col">
+    <div className="inter w-64 fixed min-h-screen bg-white shadow-md flex flex-col">
       {/* Sidebar Header */}
       <div className="flex items-center p-6">
         <Link to="/" className="flex  items-center gap-2">

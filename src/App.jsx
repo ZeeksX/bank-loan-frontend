@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -34,6 +33,25 @@ const ProtectedRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" />;
 };
 
+// AdminRoute ensures that only admin users can access admin routes
+const AdminRoute = ({ children }) => {
+  const { isAuthenticated, isAdmin } = useAuth();
+  if (isAuthenticated === null) return null;
+  
+  // If user is not authenticated, redirect to login
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+  
+  // If user is authenticated but not an admin, redirect to dashboard
+  if (!isAdmin()) {
+    return <Navigate to="/dashboard" />;
+  }
+  
+  // User is authenticated and is an admin
+  return children;
+};
+
 const App = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -61,7 +79,6 @@ const App = () => {
       <Router>
         <Routes>
           {/* Public Routes */}
-
           <Route
             path="/"
             element={
@@ -87,6 +104,8 @@ const App = () => {
               />
             }
           />
+          
+          {/* Customer Routes */}
           <Route
             element={
               <ProtectedRoute>
@@ -108,13 +127,15 @@ const App = () => {
 
           {/* Admin Routes */}
           <Route
-            element={<ProtectedRoute>
-              <AdminDashboard
-                sidebarOpen={sidebarOpen}
-                toggleSidebar={toggleSidebar}
-                isMobile={isMobile}
-              />
-            </ProtectedRoute>}
+            element={
+              <AdminRoute>
+                <AdminDashboard
+                  sidebarOpen={sidebarOpen}
+                  toggleSidebar={toggleSidebar}
+                  isMobile={isMobile}
+                />
+              </AdminRoute>
+            }
           >
             <Route path="admin/dashboard" element={<Admin />} />
             <Route path="admin/loans" element={<Loans />} />
@@ -125,6 +146,9 @@ const App = () => {
             <Route path="admin/reports" element={<Reports />} />
             <Route path="admin/security" element={<Security />} />
           </Route>
+          
+          {/* Catch-all route redirects to login */}
+          <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </Router>
     </AuthProvider>

@@ -18,6 +18,12 @@ export const AuthProvider = ({ children }) => {
         }
     });
 
+    // Function to check if the current user is an admin
+    const isAdmin = () => {
+        if (!user) return false;
+        return user.role === 'admin' || user.role === 'loan_officer' || user.role === 'manager' || user.is_admin === true;
+    };
+
     // Function to decode JWT token and extract expiration time
     const getTokenExpiryTime = (token) => {
         if (!token) return null;
@@ -176,7 +182,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, login, logout, user, refreshToken }}>
+        <AuthContext.Provider value={{ isAuthenticated, login, logout, user, isAdmin, refreshToken }}>
             {children}
         </AuthContext.Provider>
     );
