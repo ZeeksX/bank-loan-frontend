@@ -55,20 +55,6 @@ const LoanApplicationForm = ({ product }) => {
     const currency = product?.currency ?? DEFAULT_CURRENCY;
     const currencyLocale = product?.locale ?? DEFAULT_CURRENCY_LOCALE;
 
-    // --- Formatting Helper (Memoized with useCallback) ---
-    // Defined early so it can be used in useMemo for the schema
-    const formatCurrency = useCallback((amount, curr = currency, loc = currencyLocale) => {
-        // Basic handling for non-numeric values during initial render or state updates
-        // Use Intl.NumberFormat for proper currency formatting
-        return new Intl.NumberFormat(loc, {
-            style: 'currency',
-            currency: curr,
-            minimumFractionDigits: 0, // Typically no kobo for Naira display
-            maximumFractionDigits: 0,
-        }).format(amount);
-    }, [currency, currencyLocale]); // Recalculate only if currency settings change
-
-
     // --- State Definitions ---
     const [currentStep, setCurrentStep] = useState('personal');
     const [formData, setFormData] = useState({
@@ -77,7 +63,7 @@ const LoanApplicationForm = ({ product }) => {
         email: '',
         phone: '',
         address: '',
-        // Initialize form state using the determined constraints
+        application_reference: `BL-${Math.floor(100000 + Math.random() * 900000)}`,
         loanAmount: minAmount, // Start slider/amount at the minimum allowed
         loanPurpose: product?.product_name ?? '', // Pre-fill purpose if product exists
         loanTerm: minTerm.toString(), // Start term select at the minimum allowed
@@ -95,8 +81,8 @@ const LoanApplicationForm = ({ product }) => {
         console.log(`DEBUG: Creating loan schema with minAmount: ${minAmount}, maxAmount: ${maxAmount}, minTerm: ${minTerm}, maxTerm: ${maxTerm}`);
         return Yup.object().shape({
             loanAmount: Yup.number()
-                .min(minAmount, `Minimum loan amount is ${formatCurrency(minAmount)}`) // Use derived minAmount
-                .max(maxAmount, `Maximum loan amount is ${formatCurrency(maxAmount)}`) // Use derived maxAmount
+                .min(minAmount, `Minimum loan amount is ${minAmount}`) // Use derived minAmount
+                .max(maxAmount, `Maximum loan amount is ${maxAmount}`) // Use derived maxAmount
                 .required('Loan amount is required')
                 .typeError('Loan amount must be a valid number'), // Add type error message
             loanPurpose: Yup.string()
@@ -108,7 +94,7 @@ const LoanApplicationForm = ({ product }) => {
                 .typeError('Loan term must be selected'), // Error if parsing fails
         });
         // Regenerate schema only if the limits or formatting function change
-    }, [minAmount, maxAmount, minTerm, maxTerm, formatCurrency]);
+    }, [minAmount, maxAmount, minTerm, maxTerm]);
 
 
     // --- Effect to sync formData after initial product load (Optional Refinement) ---
@@ -281,6 +267,7 @@ const LoanApplicationForm = ({ product }) => {
             const token = localStorage.getItem('access_token');
 
             const dataSent = {
+                application_reference: formData.application_reference,
                 customer_id: user?.customerId,
                 product_id: product?.product_id,
                 requested_amount: formData.loanAmount,
@@ -441,7 +428,7 @@ const LoanApplicationForm = ({ product }) => {
                             {/* Loan Amount Slider */}
                             <div className="space-y-1.5 mb-16">
                                 <label htmlFor="loanAmountSlider" className="flex gap-2 items-center text-lg font-medium text-gray-700">
-                                    Loan Amount: <span className='font-semibold text-lg text-gray-900'>{formatCurrency(formData.loanAmount)}</span>
+                                    Loan Amount: <span className='font-semibold text-lg text-gray-900'>{formData.loanAmount}</span>
                                 </label>
                                 <input
                                     type="range"
@@ -457,8 +444,8 @@ const LoanApplicationForm = ({ product }) => {
                                     className={`w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500 ${errors.loanAmount ? 'ring-2 ring-offset-1 ring-red-500' : ''}`}
                                 />
                                 <div className="flex justify-between text-xs text-gray-500 px-1">
-                                    <span>{formatCurrency(minAmount)}</span>
-                                    <span>{formatCurrency(maxAmount)}</span>
+                                    <span>{minAmount}</span>
+                                    <span>{maxAmount}</span>
                                 </div>
                                 {/* Error message specifically for the slider */}
                                 {errors.loanAmount && <p id="loanAmountSlider-error" className="text-red-600 text-xs mt-1">{errors.loanAmount}</p>}
@@ -528,7 +515,7 @@ const LoanApplicationForm = ({ product }) => {
                             <div className="pt-5">
                                 <h3 className="text-base font-semibold text-gray-800 mb-3">Loan Details</h3>
                                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                                    <div><dt className="text-gray-500">Amount:</dt><dd className="text-gray-900 font-semibold mt-0.5">{formatCurrency(formData.loanAmount)}</dd></div>
+                                    <div><dt className="text-gray-500">Amount:</dt><dd className="text-gray-900 font-semibold mt-0.5">{formData.loanAmount}</dd></div>
                                     <div><dt className="text-gray-500">Purpose/Type:</dt><dd className="text-gray-900 mt-0.5">{formData.loanPurpose || 'N/A'}</dd></div>
                                     <div><dt className="text-gray-500">Term:</dt><dd className="text-gray-900 mt-0.5">{formData.loanTerm ? `${formData.loanTerm} months` : 'N/A'}</dd></div>
                                 </dl>
@@ -539,7 +526,7 @@ const LoanApplicationForm = ({ product }) => {
                                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                                     <div><dt className="text-gray-500">Status:</dt><dd className="text-gray-900 mt-0.5">{formData.employmentStatus || 'N/A'}</dd></div>
                                     <div><dt className="text-gray-500">Employer/Business:</dt><dd className="text-gray-900 mt-0.5">{formData.employer || 'N/A'}</dd></div>
-                                    <div><dt className="text-gray-500">Annual Income:</dt><dd className="text-gray-900 mt-0.5">{formData.income ? formatCurrency(Number(formData.income)) : 'N/A'}</dd></div>
+                                    <div><dt className="text-gray-500">Annual Income:</dt><dd className="text-gray-900 mt-0.5">{formData.income ? Number(formData.income) : 'N/A'}</dd></div>
                                     <div><dt className="text-gray-500">Start Date:</dt><dd className="text-gray-900 mt-0.5">{formData.startDate || 'N/A'}</dd></div>
                                 </dl>
                             </div>
@@ -584,7 +571,7 @@ const LoanApplicationForm = ({ product }) => {
                                     <div className="text-xs space-y-2">
                                         <div className="flex justify-between">
                                             <span className="text-gray-500">Application Ref:</span>
-                                            <span className="font-medium text-gray-700">BL-{Math.floor(100000 + Math.random() * 900000)}</span>
+                                            <span className="font-medium text-gray-700">{formData?.application_reference}</span>
                                         </div>
                                         <hr className="border-gray-100" />
                                         <div className="flex justify-between">
@@ -677,7 +664,7 @@ const LoanApplicationForm = ({ product }) => {
                     <button
                         type="button"
                         onClick={() => { console.log("Navigate to /my-loans"); window.location.href = '/my-loans'; }} // Simple redirect for now
-                        className="px-5 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 transition-colors"
+                        className="px-5 py-2 cursor-pointer hover:bg-blue-500 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-blue-500 transition-colors"
                     >
                         Go to My Loans
                     </button>

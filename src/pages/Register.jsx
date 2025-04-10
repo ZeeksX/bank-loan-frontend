@@ -32,9 +32,8 @@ const Register = () => {
   const [rememberMe, setRememberMe] = useState(false); // Although maybe less relevant for register? Included as it was there.
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState({
-    open: false,
     message: '',
-    severity: 'info', // 'info', 'success', 'warning', 'error'
+    type: 'info', // 'info', 'success', 'warning', 'error'
   });
 
   // const { register } = useAuth(); // Get register function from Auth context if implemented
@@ -61,19 +60,20 @@ const Register = () => {
     // --- Basic Validation Placeholder ---
     let validationErrors = {};
 
-    if (!formData.first_name) validationErrors.first_name = 'First name is required.';
-    if (!formData.last_name) validationErrors.last_name = 'Last name is required.';
+    if (!formData.first_name.trim()) validationErrors.first_name = 'First name is required.';
+    if (!formData.last_name.trim()) validationErrors.last_name = 'Last name is required.';
     if (!formData.date_of_birth) validationErrors.date_of_birth = 'Date of birth is required.';
-    if (!formData.address) validationErrors.address = 'Address is required.';
-    if (!formData.city) validationErrors.city = 'City is required.';
-    if (!formData.state) validationErrors.state = 'State is required.';
-    if (!formData.postal_code) validationErrors.postal_code = 'Postal code is required.';
-    if (!formData.country) validationErrors.country = 'Country is required.';
-    if (!formData.phone) validationErrors.phone = 'Phone number is required.';
-    if (!formData.email) validationErrors.email = 'Email is required.';
+    if (!formData.address.trim()) validationErrors.address = 'Address is required.';
+    if (!formData.city.trim()) validationErrors.city = 'City is required.';
+    if (!formData.state.trim()) validationErrors.state = 'State is required.';
+    if (!formData.postal_code.trim()) validationErrors.postal_code = 'Postal code is required.';
+    if (!formData.country.trim()) validationErrors.country = 'Country is required.';
+    if (!formData.phone.trim()) validationErrors.phone = 'Phone number is required.';
+    if (!formData.email.trim()) validationErrors.email = 'Email is required.';
     if (!formData.password) validationErrors.password = 'Password is required.';
+    if (!formData.ssn.trim()) validationErrors.ssn = 'BVN is required.';
 
-    // Optional Fields with Validation
+    // Optional field validations...
     if (formData.income && isNaN(formData.income)) {
       validationErrors.income = 'Income must be a valid number.';
     }
@@ -83,26 +83,10 @@ const Register = () => {
     if (formData.employment_status && formData.employment_status.length < 2) {
       validationErrors.employment_status = 'Employment status must be at least 2 characters long.';
     }
-
-    // Email validation
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
       validationErrors.email = 'Email is invalid';
     }
-    if (!formData.email.trim()) {
-      validationErrors.email = 'Email is required.';
-    }
-    if (!formData.first_name.trim()) {
-      validationErrors.email = 'First name is required.';
-    }
-    if (!formData.last_name.trim()) {
-      validationErrors.email = 'Last name is required.';
-    }
-    if (formData.ssn && !/^\d{11}$/.test(formData.ssn)) {
-      validationErrors.ssn = 'BVN must be 11 digits long.';
-    }
-    if (!formData.ssn.trim()) {
-      validationErrors.ssn = 'BVN is required.';
-    }
+
     if (formData.date_of_birth) {
       const today = new Date();
       const dob = new Date(formData.date_of_birth);
@@ -115,13 +99,11 @@ const Register = () => {
         validationErrors.date_of_birth = 'You must be at least 18 years old.';
       }
     }
-    // Password strength
+
     const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]).{6,}$/;
     if (formData.password && !passwordRegex.test(formData.password)) {
       validationErrors.password = 'Password must contain at least 6 characters, one uppercase letter, one number, and one special character.';
     }
-
-
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
@@ -130,44 +112,53 @@ const Register = () => {
     }
 
     try {
-      console.log("Form data: ", formData)
+      console.log("Form data: ", formData);
       const response = await fetch("http://localhost:8000/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify(formData)
-      })
+      });
+
+      // Check if response has a JSON content-type
+      const contentType = response.headers.get("content-type");
+      let data = {};
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        data = await response.json();
+      } else {
+        // If no JSON, fallback to text and log it for debugging
+        const text = await response.text();
+        console.warn("Response did not return JSON, got:", text);
+      }
 
       if (response.ok) {
-        const data = await response.json();
-
+        // Save tokens and user details
         localStorage.setItem("access_token", data.access);
         localStorage.setItem("refresh_token", data.refresh);
         localStorage.setItem("user", JSON.stringify(data.user));
 
+        setToast({ message: 'Registration successful!', type: 'success' });
         setTimeout(() => {
-          navigate("/login")
+          navigate("/login");
         }, 1000);
-
+      } else {
+        // Handle errors returned from server
+        setToast({ message: data.message || 'Registration failed. Please try again.', type: 'error' });
       }
-      setToast('Login successful!', 'success');
-
     } catch (error) {
-      console.error('Login error:', error);
-      setToast(error.message || 'Login failed. Please try again.', 'error');
+      console.error('Register error:', error);
+      setToast({ message: error.message || 'Register failed. Please try again.', type: 'error' });
     } finally {
       setIsLoading(false);
     }
-
   };
 
   return (
     <>
       <Toast
-        open={toast.open}
+        type={toast.open}
         message={toast.message}
-        severity={toast.severity}
         onClose={() => setToast(prev => ({ ...prev, open: false }))}
       />
 
