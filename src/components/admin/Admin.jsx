@@ -11,63 +11,38 @@ import { useOutletContext } from 'react-router-dom';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const allApplications = useOutletContext() || [];
+  const { allApplications, customers, loans } = useOutletContext() ?? { allApplications: [], customers: [], loans: [] };
 
-  const statsData = [
-    {
-      title: 'Total Users',
-      value: '1,248',
-      icon: Users,
-      trend: '+12% from last month',
-      color: 'blue'
-    },
-    {
-      title: 'Active Loans',
-      value: '842',
-      icon: FileText,
-      trend: '+5% from last month',
-      color: 'blue'
-    },
-    {
-      title: 'Total Revenue',
-      value: '$1.2M',
-      icon: DollarSign,
-      trend: '+18% from last month',
-      color: 'green'
-    },
-    {
-      title: 'Pending Approvals',
-      value: '64',
-      icon: AlertTriangle,
-      trend: '12 need urgent review',
-      color: 'amber'
-    }
-  ];
-  const recentApplications = allApplications.slice(0, 5).map((app) => ({
+  const calculateStats = () => {
+    const totalUsers = customers?.length || 0;
+    const activeLoans = loans?.filter(app => ['Approved', 'In Review', 'Pending'].includes(app.status)).length || 0;
+    const pendingApprovals = allApplications?.filter(app => ['Pending', 'In Review'].includes(app.status)).length || 0;
+    const totalRevenue = '$1.2M';
+
+    return [
+      { title: 'Total Users', value: totalUsers.toLocaleString(), icon: Users, trend: '+12% from last month', color: 'blue' }, // Trend is still hardcoded example
+      { title: 'Active Loans', value: activeLoans.toLocaleString(), icon: FileText, trend: '+5% from last month', color: 'blue' }, // Trend is still hardcoded example
+      { title: 'Total Revenue', value: totalRevenue, icon: DollarSign, trend: '+18% from last month', color: 'green' }, // Trend is still hardcoded example
+      { title: 'Pending Approvals', value: pendingApprovals.toLocaleString(), icon: AlertTriangle, trend: `${pendingApprovals > 0 ? pendingApprovals : 'No'} pending`, color: 'amber' } // Example dynamic trend
+    ];
+  };
+
+  const statsData = calculateStats();
+  const recentApplications = allApplications.length > 0 ? (allApplications.slice(0, 5).map((app) => ({
     id: app.id,
-    customer:app.customer,
-    amount:app.amount,
-    type:app.type,
-    status:app.status,
+    customer: app.customer,
+    amount: app.amount,
+    type: app.type,
+    status: app.status,
     date: app.date
-  }))
-
-  const users = [
-    { id: 'USR-1001', name: 'John Doe', email: 'john.doe@example.com', registrationDate: '2023-01-15', loans: 2, status: 'Active' },
-    { id: 'USR-1002', name: 'Jane Smith', email: 'jane.smith@example.com', registrationDate: '2023-01-20', loans: 1, status: 'Active' },
-    { id: 'USR-1003', name: 'Robert Johnson', email: 'robert.j@example.com', registrationDate: '2023-01-25', loans: 0, status: 'Active' },
-    { id: 'USR-1004', name: 'Emily Williams', email: 'emily.w@example.com', registrationDate: '2023-02-05', loans: 1, status: 'Inactive' },
-    { id: 'USR-1005', name: 'Michael Brown', email: 'michael.b@example.com', registrationDate: '2023-02-10', loans: 3, status: 'Active' },
-    { id: 'USR-1006', name: 'Sarah Davis', email: 'sarah.d@example.com', registrationDate: '2023-02-15', loans: 0, status: 'Active' },
-    { id: 'USR-1007', name: 'David Miller', email: 'david.m@example.com', registrationDate: '2023-02-20', loans: 2, status: 'Active' },
-  ];
+  }))) : [];
 
   const reports = [
     { id: 1, name: 'Monthly Loan Summary', period: 'March 2023', generatedOn: '2023-04-01', status: 'Completed' },
     { id: 2, name: 'User Acquisition Report', period: 'March 2023', generatedOn: '2023-04-01', status: 'Completed' },
     { id: 3, name: 'Revenue Analysis', period: 'March 2023', generatedOn: '2023-04-01', status: 'Completed' },
-    { id: 4, name: 'Monthly Loan Summary', period: 'April 2023', generatedOn: '2023-05-01', status: 'In Progress' }, // Using future date for example
-    { id: 5, name: 'User Acquisition Report', period: 'April 2023', generatedOn: '2023-05-01', status: 'In Progress' }, // Using future date for example
+    { id: 4, name: 'Monthly Loan Summary', period: 'April 2023', generatedOn: '2023-05-01', status: 'In Progress' },
+    { id: 5, name: 'User Acquisition Report', period: 'April 2023', generatedOn: '2023-05-01', status: 'In Progress' },
   ];
 
   // Helper function for status colors (Light mode only)
@@ -264,10 +239,10 @@ const Admin = () => {
                                 <tr key={app.id} className="bg-white border-b hover:bg-gray-50">
                                   <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{app.id}</td>
                                   <td className="px-6 py-4">{app.customer}</td>
-                                  <td className="px-6 py-4">${app.amount.toLocaleString()}</td>
+                                  <td className="px-6 py-4">₦{app.amount.toLocaleString()}</td>
                                   <td className="px-6 py-4">{app.type}</td>
                                   <td className="px-6 py-4">
-                                    <div className={`px-2 py-1 rounded-full text-xs font-medium inline-flex items-center justify-center ${getStatusColor(app.status)}`}>
+                                    <div className={`px-2 py-1 rounded-full text-xs font-medium inline-flex items-center justify-center ₦{getStatusColor(app.status)}`}>
                                       {app.status}
                                     </div>
                                   </td>
@@ -321,26 +296,26 @@ const Admin = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {users.map((user) => (
-                                <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
-                                  <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{user.id}</td>
-                                  <td className="px-6 py-4">{user.name}</td>
-                                  <td className="px-6 py-4">{user.email}</td>
-                                  <td className="px-6 py-4">{user.registrationDate}</td>
-                                  <td className="px-6 py-4">{user.loans}</td>
+                              {customers.map((customer) => (
+                                <tr key={customer.id} className="bg-white border-b hover:bg-gray-50">
+                                  <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{customer.customer_id}</td>
+                                  <td className="px-6 py-4">{customer.first_name} {customer.last_name}</td>
+                                  <td className="px-6 py-4">{customer.email}</td>
+                                  <td className="px-6 py-4">{customer.created_at}</td>
+                                  <td className="px-6 py-4">{customer.loans}</td>
                                   <td className="px-6 py-4">
-                                    <div className={`px-2 py-1 rounded-full text-xs font-medium inline-flex items-center justify-center ${user.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                      {user.status}
+                                    <div className={`px-2 py-1 rounded-full text-xs font-medium inline-flex items-center justify-center ${customer.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                      {customer.status}
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 text-right">
                                     <div className="flex justify-end space-x-2">
-                                      <button onClick={() => handleView(user.id)} className="text-blue-600 hover:text-blue-800 text-xs p-1 font-medium">View</button>
-                                      <button onClick={() => handleEdit(user.id)} className="text-gray-600 hover:text-gray-800 text-xs p-1 font-medium">Edit</button>
-                                      {user.status === 'Active' ? (
-                                        <button onClick={() => handleSuspend(user.id)} className="text-red-600 hover:text-red-800 text-xs p-1 font-medium">Suspend</button>
+                                      <button onClick={() => handleView(customer.id)} className="text-blue-600 hover:text-blue-800 text-xs p-1 font-medium">View</button>
+                                      <button onClick={() => handleEdit(customer.id)} className="text-gray-600 hover:text-gray-800 text-xs p-1 font-medium">Edit</button>
+                                      {customer.status === 'Active' ? (
+                                        <button onClick={() => handleSuspend(customer.id)} className="text-red-600 hover:text-red-800 text-xs p-1 font-medium">Suspend</button>
                                       ) : (
-                                        <button onClick={() => handleActivate(user.id)} className="text-green-600 hover:text-green-800 text-xs p-1 font-medium">Activate</button>
+                                        <button onClick={() => handleActivate(customer.id)} className="text-green-600 hover:text-green-800 text-xs p-1 font-medium">Activate</button>
                                       )}
                                     </div>
                                   </td>
