@@ -16,14 +16,14 @@ const AdminDashboard = () => {
           }
         })
         const data = await response.json();
-        setRecentApplications(data);
+        setRecentApplications(data.data);
       } catch (error) {
         console.error('Error fetching recent loan applications: ', error);
       }
     }
 
     fetchRecentApplications();
-  }, [recentApplications])
+  }, [])
 
   return (
     <>

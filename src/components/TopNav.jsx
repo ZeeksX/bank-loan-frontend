@@ -49,7 +49,6 @@ const TopNav = () => {
       navigate('/login');
     }, 2000);
 
-    // 4. Close the dropdown
     setIsProfileDropdownOpen(false);
   };
 

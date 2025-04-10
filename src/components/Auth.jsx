@@ -10,7 +10,6 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {
         try {
             const storedUser = localStorage.getItem("user");
-            // Only parse if storedUser exists and isn't undefined
             return storedUser ? JSON.parse(storedUser) : null;
         } catch (error) {
             console.error("Error parsing stored user", error);
@@ -21,7 +20,8 @@ export const AuthProvider = ({ children }) => {
     // Function to check if the current user is an admin
     const isAdmin = () => {
         if (!user) return false;
-        return user.role === 'admin' || user.role === 'loan_officer' || user.role === 'manager' || user.is_admin === true;
+        const adminRoles = ['admin', 'loan_officer', 'manager'];
+        return adminRoles.includes(user.role) || user.is_admin === true;
     };
 
     // Function to decode JWT token and extract expiration time
@@ -85,10 +85,6 @@ export const AuthProvider = ({ children }) => {
         const timeUntilExpiry = expiryTime - currentTime;
         const timeUntilRefresh = Math.max(0, timeUntilExpiry - (5 * 60 * 1000));
 
-        // Log the time remaining until refresh
-        const minutesUntilRefresh = Math.floor(timeUntilRefresh / 60000);
-        const secondsUntilRefresh = Math.floor((timeUntilRefresh % 60000) / 1000);
-
         // Clear any existing timer
         if (window.refreshTimer) {
             clearTimeout(window.refreshTimer);
@@ -112,7 +108,7 @@ export const AuthProvider = ({ children }) => {
                 clearInterval(window.refreshLogTimer);
                 return;
             }
-        }, 60000); // Log every minute
+        }, 60000);
     };
 
     // Update authentication state on mount and set up token refresh

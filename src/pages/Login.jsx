@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Toast from '../components/Toast';
 import google from "../assets/google.svg";
-import { useAuth } from "../components/Auth"
-import { useNavigate } from 'react-router-dom';
-import Loader from "../components/ui/Loader"
+import { useAuth } from "../components/Auth";
+import Loader from "../components/ui/Loader";
 
 const Login = () => {
     const [showPassword, setShowPassword] = useState(false);
@@ -14,52 +13,24 @@ const Login = () => {
     const [loader, showLoader] = useState(false);
 
     const { login } = useAuth();
-    const [formData, setFormData] = useState({
-        email: '',
-        password: ''
-    });
-    const [errors, setErrors] = useState({
-        email: '',
-        password: ''
-    });
-    const [toast, setToast] = useState({
-        open: false,
-        message: '',
-        severity: 'info' // 'info', 'success', 'warning', 'error'
-    });
+    const [formData, setFormData] = useState({ email: '', password: '' });
+    const [errors, setErrors] = useState({ email: '', password: '' });
+
+    const [toast, setToast] = useState({ message: '', type: 'info' });
+
     const navigate = useNavigate();
-
-
-    const showToast = (message, severity = 'info') => {
-        setToast({
-            open: true,
-            message,
-            severity
-        });
-        setTimeout(() => setToast(prev => ({ ...prev, open: false })), 5000);
-    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-        // Clear error when user types
+        setFormData(prev => ({ ...prev, [name]: value }));
         if (errors[name]) {
-            setErrors(prev => ({
-                ...prev,
-                [name]: ''
-            }));
+            setErrors(prev => ({ ...prev, [name]: '' }));
         }
     };
 
     const validateForm = () => {
         let valid = true;
-        const newErrors = {
-            email: '',
-            password: ''
-        };
+        const newErrors = { email: '', password: '' };
 
         if (!formData.email) {
             newErrors.email = 'Email is required';
@@ -85,7 +56,7 @@ const Login = () => {
         e.preventDefault();
 
         if (!validateForm()) {
-            showToast('Please fill in all fields correctly', 'error');
+            setToast({ message: 'Please fill in all fields correctly', type: 'error' });
             return;
         }
 
@@ -100,51 +71,61 @@ const Login = () => {
             });
 
             if (response.ok) {
-                showToast('Login successful!', 'success');
                 const data = await response.json();
-                console.log("Response: ", data);
+                const userRoleFromAPI = data.user?.role; 
+
+                // --- Basic validation of response structure ---
+                if (!userRoleFromAPI || !data.user || !data.tokens?.access || !data.tokens?.refresh) {
+                    console.error("Incomplete login response from API:", data);
+                    setToast({ message: 'Login failed: Incomplete data received.', type: 'error' });
+                    setIsLoading(false);
+                    return; 
+                }
+           
                 const userData = {
-                    email: formData.email,
-                    password: formData.password,
+                    ...data.user,
                     access: data.tokens.access,
                     refresh: data.tokens.refresh,
-                }
-                // Store data and set auth context
+                };
                 login(userData);
 
-                localStorage.setItem("access_token", data.tokens.access);
-                localStorage.setItem("refresh_token", data.tokens.refresh);
-                localStorage.setItem("user", JSON.stringify(data.customer));
-                const role = JSON.parse(localStorage.getItem('user')).role;
-                // Show loader for exactly 2 seconds before navigating
+                setToast({ message: 'Login successful!', type: 'success' });
                 showLoader(true);
                 setTimeout(() => {
-                    if (role === 'admin') {
-                        navigate('/admin/dashboard')
+                    showLoader(false);
+                    console.log("Redirecting based on role:", userRoleFromAPI);
+                    if (['admin', 'loan_officer', 'manager'].includes(userRoleFromAPI)) {
+                        navigate('/admin/dashboard');
+                    } else if (userRoleFromAPI === 'customer') {
+                        navigate("/dashboard");
+                    } else {
+                        console.warn("Login successful but user has an unexpected role:", userRoleFromAPI);
+                        navigate("/dashboard"); 
                     }
-                    navigate("/dashboard");
-                }, 2000);
+                }, 1500);
+
             } else {
-                // Handle unsuccessful login
                 const errorData = await response.json();
-                showToast(errorData.message || 'Login failed. Please check your credentials.', 'error');
+                setToast({
+                    message: errorData.message || 'Login failed. Please check your credentials.',
+                    type: 'error'
+                });
             }
         } catch (error) {
             console.error('Login error:', error);
-            showToast(error.message || 'Login failed. Please try again.', 'error');
+            const errorMessage = error instanceof Error ? error.message : 'Login failed due to a network or server issue.';
+            setToast({ message: errorMessage, type: 'error' });
         } finally {
             setIsLoading(false);
-            // Note: We don't hide the loader here since we want it to show until navigation
         }
     };
 
     return (
         <>
             <Toast
-                open={toast.open}
                 message={toast.message}
-                severity={toast.severity}
-                onClose={() => setToast(prev => ({ ...prev, open: false }))}
+                type={toast.type}
+                onClose={() => setToast({ message: '', type: 'info' })}
             />
 
             <div className="min-h-screen inter flex flex-col bg-gray-50">
@@ -156,6 +137,7 @@ const Login = () => {
                         <span className="text-2xl font-bold text-gray-800">BankSecure</span>
                     </div>
                 </div>
+
                 <div className='login flex items-center overflow-y-scroll max-h-[80vh] w-md mx-auto justify-center flex-col px-8 py-12 bg-white rounded-lg shadow-lg'>
                     <div className='flex flex-col items-center justify-center '>
                         <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">Loan Management System</h1>
@@ -243,8 +225,9 @@ const Login = () => {
                                     'Sign in'
                                 )}
                             </button>
+
                             <button
-                                type="button" // Changed from submit to avoid form submission
+                                type="button"
                                 className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md cursor-pointer shadow-sm text-base font-medium hover:text-white bg-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                                 disabled={isLoading}
                             >
@@ -260,6 +243,7 @@ const Login = () => {
                                     </>
                                 )}
                             </button>
+
                             <div className="text-center text-sm text-gray-600">
                                 <p>
                                     Don't have an account? {' '}
@@ -272,7 +256,7 @@ const Login = () => {
                     </div>
                 </div>
             </div>
-            {/* Full page loader overlay that will display for exactly 2 seconds */}
+
             {loader && <Loader />}
         </>
     );

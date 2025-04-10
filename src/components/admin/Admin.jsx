@@ -11,8 +11,7 @@ import { useOutletContext } from 'react-router-dom';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const recentApplications = useOutletContext();
-  console.log(recentApplications)
+  const allApplications = useOutletContext() || [];
 
   const statsData = [
     {
@@ -44,14 +43,14 @@ const Admin = () => {
       color: 'amber'
     }
   ];
-
-  const allApplications = [
-    { id: 'APP-1238', customer: 'Sarah Davis', amount: 10000, type: 'Personal', status: 'Pending', date: '2023-04-03' },
-    { id: 'APP-1237', customer: 'David Miller', amount: 200000, type: 'Mortgage', status: 'Approved', date: '2023-04-02' },
-    { id: 'APP-1236', customer: 'Lisa Wilson', amount: 30000, type: 'Auto', status: 'In Review', date: '2023-04-01' },
-    { id: 'APP-1235', customer: 'James Taylor', amount: 50000, type: 'Business', status: 'Rejected', date: '2023-03-31' },
-    { id: 'APP-1234', customer: 'Jennifer Martinez', amount: 7500, type: 'Personal', status: 'Approved', date: '2023-03-30' },
-  ];
+  const recentApplications = allApplications.slice(0, 5).map((app) => ({
+    id: app.id,
+    customer:app.customer,
+    amount:app.amount,
+    type:app.type,
+    status:app.status,
+    date: app.date
+  }))
 
   const users = [
     { id: 'USR-1001', name: 'John Doe', email: 'john.doe@example.com', registrationDate: '2023-01-15', loans: 2, status: 'Active' },
@@ -207,11 +206,11 @@ const Admin = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {recentApplications.map((app) => (
+                              {recentApplications.length > 0 ? (recentApplications.map((app) => (
                                 <tr key={app.id} className="bg-white border-b hover:bg-gray-50">
                                   <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{app.id}</td>
                                   <td className="px-6 py-4">{app.customer}</td>
-                                  <td className="px-6 py-4">${app.amount.toLocaleString()}</td>
+                                  <td className="px-6 py-4">₦{app.amount.toLocaleString()}</td>
                                   <td className="px-6 py-4">{app.type}</td>
                                   <td className="px-6 py-4">
                                     <div className={`px-2 py-1 rounded-full text-xs font-medium inline-flex items-center justify-center ${getStatusColor(app.status)}`}>
@@ -220,7 +219,11 @@ const Admin = () => {
                                   </td>
                                   <td className="px-6 py-4">{app.date}</td>
                                 </tr>
-                              ))}
+                              ))) : (
+                                <tr className='bg-white border-b hover:bg-gray-50'>
+                                  <td colSpan="6" className="px-6 py-4 text-center text-gray-500">No recent applications</td>
+                                </tr>
+                              )}
                             </tbody>
                           </table>
                         </div>

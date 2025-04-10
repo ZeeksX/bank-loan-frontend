@@ -37,18 +37,15 @@ const ProtectedRoute = ({ children }) => {
 const AdminRoute = ({ children }) => {
   const { isAuthenticated, isAdmin } = useAuth();
   if (isAuthenticated === null) return null;
-  
-  // If user is not authenticated, redirect to login
+
   if (!isAuthenticated) {
     return <Navigate to="/login" />;
   }
-  
-  // If user is authenticated but not an admin, redirect to dashboard
+
   if (!isAdmin()) {
     return <Navigate to="/dashboard" />;
   }
-  
-  // User is authenticated and is an admin
+
   return children;
 };
 
@@ -104,7 +101,7 @@ const App = () => {
               />
             }
           />
-          
+
           {/* Customer Routes */}
           <Route
             element={
@@ -146,7 +143,7 @@ const App = () => {
             <Route path="admin/reports" element={<Reports />} />
             <Route path="admin/security" element={<Security />} />
           </Route>
-          
+
           {/* Catch-all route redirects to login */}
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
