@@ -68,7 +68,21 @@ const Admin = () => {
 
   // Placeholder for button actions
   const handleView = (id) => console.log(`View item ${id}`);
-  const handleApprove = (id) => console.log(`Approve item ${id}`);
+  const handleApprove = async (id) => {
+    const response = await fetch(`http://localhost:8000/api/loans/applications/${id + 1}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem('access_token')}`
+      },
+      body: JSON.stringify({ status: "approved" })
+    })
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Data from the backend: ", data)
+    }
+
+  }
   const handleReject = (id) => console.log(`Reject item ${id}`);
   const handleEdit = (id) => console.log(`Edit item ${id}`);
   const handleSuspend = (id) => console.log(`Suspend item ${id}`);
@@ -235,25 +249,25 @@ const Admin = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {allApplications.map((app) => (
+                              {allApplications.map((app, index) => (
                                 <tr key={app.id} className="bg-white border-b hover:bg-gray-50">
                                   <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{app.id}</td>
                                   <td className="px-6 py-4">{app.customer}</td>
                                   <td className="px-6 py-4">₦{app.amount.toLocaleString()}</td>
                                   <td className="px-6 py-4">{app.type}</td>
                                   <td className="px-6 py-4">
-                                    <div className={`px-2 py-1 rounded-full text-xs font-medium inline-flex items-center justify-center ₦{getStatusColor(app.status)}`}>
+                                    <div className={`px-2 py-1 rounded-full text-xs font-medium inline-flex items-center justify-center ${getStatusColor(app.status)}`}>
                                       {app.status}
                                     </div>
                                   </td>
                                   <td className="px-6 py-4">{app.date}</td>
                                   <td className="px-6 py-4 text-right">
                                     <div className="flex justify-end space-x-2">
-                                      <button onClick={() => handleView(app.id)} className="text-blue-600 hover:text-blue-800 text-xs p-1 font-medium">View</button>
+                                      <button onClick={() => handleView(index)} className="text-blue-600 hover:text-blue-800 text-xs p-1 font-medium">View</button>
                                       {app.status === 'Pending' || app.status === 'In Review' ? (
                                         <>
-                                          <button onClick={() => handleApprove(app.id)} className="text-green-600 hover:text-green-800 text-xs p-1 font-medium">Approve</button>
-                                          <button onClick={() => handleReject(app.id)} className="text-red-600 hover:text-red-800 text-xs p-1 font-medium">Reject</button>
+                                          <button onClick={() => handleApprove(index)} className="text-green-600 hover:text-green-800 text-xs p-1 font-medium">Approve</button>
+                                          <button onClick={() => handleReject(index)} className="text-red-600 hover:text-red-800 text-xs p-1 font-medium">Reject</button>
                                         </>
                                       ) : null}
                                     </div>
@@ -297,7 +311,7 @@ const Admin = () => {
                             </thead>
                             <tbody>
                               {customers.map((customer) => (
-                                <tr key={customer.id} className="bg-white border-b hover:bg-gray-50">
+                                <tr key={customer.customer_id} className="bg-white border-b hover:bg-gray-50">
                                   <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{customer.customer_id}</td>
                                   <td className="px-6 py-4">{customer.first_name} {customer.last_name}</td>
                                   <td className="px-6 py-4">{customer.email}</td>

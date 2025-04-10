@@ -1,8 +1,9 @@
 // File: MyLoans.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle, Clock, FileText, AlertCircle } from 'lucide-react';
+import { CheckCircle, Clock, FileText, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import LoanCard from './LoanCard';
 
 const getStatusIcon = (status) => {
     switch (status) {
@@ -34,93 +35,19 @@ const getStatusText = (status) => {
     }
 };
 
-// Loan card component displays individual loan details
-const LoanCard = ({ loan }) => {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            whileHover={{ y: -5 }}
-            className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-6 border border-gray-200 shadow-md"
-        >
-            <div className="flex justify-between items-start mb-4">
-                <div>
-                    <div className="flex items-center">
-                        <div className="mr-2">{getStatusIcon(loan.status)}</div>
-                        <span className="text-sm font-medium text-gray-500">{getStatusText(loan.status)}</span>
-                    </div>
-                    <h3 className="text-lg font-medium mt-2 text-gray-900">{loan.name}</h3>
-                </div>
-                <div className="text-sm text-right">
-                    <div className="text-gray-500">Loan ID</div>
-                    <div className="text-gray-800">{loan.id}</div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                    <div className="text-sm text-gray-500">Loan Amount</div>
-                    <div className="font-medium text-gray-800">{loan.amount}</div>
-                </div>
-                <div>
-                    <div className="text-sm text-gray-500">Amount Paid</div>
-                    <div className="font-medium text-gray-800">{loan.amountPaid}</div>
-                </div>
-                <div>
-                    <div className="text-sm text-gray-500">Due Date</div>
-                    <div className="font-medium text-gray-800">{loan.dueDate}</div>
-                </div>
-                <div>
-                    <div className="text-sm text-gray-500">Next Payment</div>
-                    <div className="font-medium text-gray-800">{loan.nextPayment}</div>
-                </div>
-            </div>
-
-            {(loan.status === 'active' || loan.status === 'completed') && loan.progress > 0 && (
-                <div className="mb-6">
-                    <div className="flex justify-between mb-1 text-sm">
-                        <span className="text-gray-600">Repayment Progress</span>
-                        <span className="font-medium text-gray-700">{loan.progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
-                        <div
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{ width: `${loan.progress}%` }}
-                        ></div>
-                    </div>
-                </div>
-            )}
-
-            <div className="flex justify-between items-center mt-4">
-                <div className="text-xs text-gray-500">Applied on {loan.date}</div>
-                <Link to={`/loans/${loan.id}`}>
-                    <button
-                        type="button"
-                        className="px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                    >
-                        View Details
-                    </button>
-                </Link>
-            </div>
-        </motion.div>
-    );
-};
-
 const filterLoans = (loans, status) => {
     if (!status || status === 'all') return loans;
     return loans.filter(loan => loan.status === status);
 };
 
 const MyLoans = () => {
-    const [loans, setLoans] = useState([]); // loans from backend
-    const [activeTab, setActiveTab] = useState('all'); // e.g., all, active, pending, etc.
+    const [loans, setLoans] = useState([]); 
+    const [activeTab, setActiveTab] = useState('all'); 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // For demonstration, we use a fixed customer ID = 1.
     // In production, retrieve this from authentication context or similar.
-    const customerId = JSON.parse(localStorage.getItem('user')).customerId;
+    const customerId = JSON.parse(localStorage.getItem('user')).userId;
 
 
     useEffect(() => {
@@ -138,7 +65,7 @@ const MyLoans = () => {
                 }
                 const data = await response.json();
                 console.log('Data from the backend: ', data)
-                setLoans(data);
+                setLoans(data.data);
             } catch (err) {
                 console.error("Error fetching customer loans: ", err.message);
             } finally {
@@ -209,7 +136,7 @@ const MyLoans = () => {
             ) : filteredLoans.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredLoans.map((loan) => (
-                        <LoanCard key={loan.id} loan={loan} />
+                        <LoanCard key={loan.id} loan={loan} getStatusIcon={getStatusIcon} getStatusText={getStatusText} />
                     ))}
                 </div>
             ) : (
