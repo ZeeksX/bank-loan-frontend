@@ -45,7 +45,7 @@ const cardData = [
 ];
 
 const Container = () => {
-  const productData = useOutletContext();
+  const { productData, myLoans } = useOutletContext() ?? { productData: [], myLoans: [] };
   const ProductData = productData?.slice(0, 3) || [];
 
   return (
@@ -103,7 +103,7 @@ const Container = () => {
                 icon={card.icon}
                 description={card.description}
                 trend={card.trend}
-                delay={index * 0.1} // You can calculate delay based on index
+                delay={index * 0.1} 
               />
             ))}
           </motion.div>

@@ -268,7 +268,7 @@ const LoanApplicationForm = ({ product }) => {
 
             const dataSent = {
                 application_reference: formData.application_reference,
-                customer_id: user?.customerId,
+                customer_id: user?.userId,
                 product_id: product?.product_id,
                 requested_amount: formData.loanAmount,
                 requested_term: formData.loanTerm,
@@ -282,7 +282,7 @@ const LoanApplicationForm = ({ product }) => {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify(dataSent), // Send relevant data
+                    body: JSON.stringify(dataSent), 
                 });
                 if (!response.ok) throw new Error('Submission failed');
                 // Handle success further if needed
@@ -297,7 +297,7 @@ const LoanApplicationForm = ({ product }) => {
             }
             // --- End TODO ---
         }
-    }, [currentStep, validateStep, product, formData]); // Dependencies
+    }, [currentStep, validateStep, product, formData]);
 
     // Moves to the previous step
     const handlePrevStep = useCallback(() => {

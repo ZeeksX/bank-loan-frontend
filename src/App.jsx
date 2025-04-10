@@ -145,7 +145,7 @@ const App = () => {
           </Route>
 
           {/* Catch-all route redirects to login */}
-          <Route path="*" element={<Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>
     </AuthProvider>

@@ -72,16 +72,16 @@ const Login = () => {
 
             if (response.ok) {
                 const data = await response.json();
-                const userRoleFromAPI = data.user?.role; 
+                const userRoleFromAPI = data.user?.role;
 
                 // --- Basic validation of response structure ---
                 if (!userRoleFromAPI || !data.user || !data.tokens?.access || !data.tokens?.refresh) {
                     console.error("Incomplete login response from API:", data);
                     setToast({ message: 'Login failed: Incomplete data received.', type: 'error' });
                     setIsLoading(false);
-                    return; 
+                    return;
                 }
-           
+
                 const userData = {
                     ...data.user,
                     access: data.tokens.access,
@@ -91,18 +91,16 @@ const Login = () => {
 
                 setToast({ message: 'Login successful!', type: 'success' });
                 showLoader(true);
-                setTimeout(() => {
-                    showLoader(false);
-                    console.log("Redirecting based on role:", userRoleFromAPI);
-                    if (['admin', 'loan_officer', 'manager'].includes(userRoleFromAPI)) {
-                        navigate('/admin/dashboard');
-                    } else if (userRoleFromAPI === 'customer') {
-                        navigate("/dashboard");
-                    } else {
-                        console.warn("Login successful but user has an unexpected role:", userRoleFromAPI);
-                        navigate("/dashboard"); 
-                    }
-                }, 1500);
+
+                console.log("Redirecting based on role:", userRoleFromAPI);
+                if (['admin', 'loan_officer', 'manager'].includes(userRoleFromAPI)) {
+                    navigate('/admin/dashboard');
+                } else if (userRoleFromAPI === 'customer') {
+                    navigate("/dashboard");
+                } else {
+                    console.warn("Login successful but user has an unexpected role:", userRoleFromAPI);
+                    navigate("/dashboard");
+                }
 
             } else {
                 const errorData = await response.json();

@@ -1,8 +1,7 @@
-// File: MyLoans.jsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, Clock, FileText, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Link, useOutletContext } from 'react-router-dom';
 import LoanCard from './LoanCard';
 
 const getStatusIcon = (status) => {
@@ -35,20 +34,15 @@ const getStatusText = (status) => {
     }
 };
 
-const filterLoans = (loans, status) => {
-    if (!status || status === 'all') return loans;
-    return loans.filter(loan => loan.status === status);
-};
-
 const MyLoans = () => {
-    const [loans, setLoans] = useState([]); 
-    const [activeTab, setActiveTab] = useState('all'); 
+    const [loans, setLoans] = useState([]);
+    const { productData, myLoans } = useOutletContext() ?? { productData: [], myLoans: [] };
+    const [activeTab, setActiveTab] = useState('all');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // In production, retrieve this from authentication context or similar.
-    const customerId = JSON.parse(localStorage.getItem('user')).userId;
-
+    // Retrieve customerId from localStorage
+    const customerId = JSON.parse(localStorage.getItem('user'))?.userId;
 
     useEffect(() => {
         const fetchLoans = async () => {
@@ -56,18 +50,17 @@ const MyLoans = () => {
                 const response = await fetch(`http://localhost:8000/api/loans/customer/${customerId}`, {
                     method: 'GET',
                     headers: {
-                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
                     }
                 });
-                if (!response.ok) {
-                    throw new Error('Error fetching loans');
-                }
+                if (!response.ok) throw new Error('Error fetching loans');
                 const data = await response.json();
-                console.log('Data from the backend: ', data)
+                console.log('Data from the backend: ', data);
                 setLoans(data.data);
             } catch (err) {
                 console.error("Error fetching customer loans: ", err.message);
+                setError(err.message);
             } finally {
                 setLoading(false);
             }
@@ -76,32 +69,30 @@ const MyLoans = () => {
         fetchLoans();
     }, [customerId]);
 
+    const filterLoans = (loans, status) => {
+        if (!status || status === 'all') return loans;
+        return loans.filter(loan => loan.status === status);
+    };
 
     const filteredLoans = filterLoans(loans, activeTab);
     const tabOptions = ['all', 'active', 'pending', 'completed', 'rejected'];
 
+    if (loading) {
+        return <div className="text-center text-gray-700">Loading loans...</div>;
+    }
+
     return (
         <div className="w-[95vw] inter mx-auto p-4 md:p-6">
+            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <div>
-                    <motion.h1
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                        className="text-3xl md:text-4xl font-bold text-gray-900"
-                    >
-                        My Loans
-                    </motion.h1>
-                    <motion.p
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: 0.1 }}
-                        className="text-gray-500 mt-2"
-                    >
-                        View and manage all your loan applications and active loans
-                    </motion.p>
-                </div>
-
+                <motion.h1
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-3xl md:text-4xl font-bold text-gray-900"
+                >
+                    My Loans
+                </motion.h1>
                 <Link to="/apply">
                     <button
                         type="button"
@@ -112,6 +103,7 @@ const MyLoans = () => {
                 </Link>
             </div>
 
+            {/* Tabs */}
             <div className="mb-8">
                 <div className="flex space-x-1 rounded-lg bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg p-1 border border-gray-200 shadow-sm overflow-x-auto">
                     {tabOptions.map((tab) => (
@@ -129,19 +121,26 @@ const MyLoans = () => {
                 </div>
             </div>
 
-            {loading ? (
-                <div className="text-center text-gray-700">Loading loans...</div>
-            ) : error ? (
-                <div className="text-center text-red-500">{error}</div>
-            ) : filteredLoans.length > 0 ? (
+            {/* Loan Cards */}
+            {filteredLoans.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredLoans.map((loan) => (
-                        <LoanCard key={loan.id} loan={loan} getStatusIcon={getStatusIcon} getStatusText={getStatusText} />
-                    ))}
+                    {filteredLoans.map((loan) => {
+                        // Find the corresponding myLoan
+                        const myLoan = myLoans?.find(item => item.loan_id === loan.loan_id);
+
+                        return (
+                            <LoanCard
+                                key={loan.id || loan.loan_id}
+                                loan={loan}
+                                myLoan={myLoan}
+                                getStatusIcon={getStatusIcon}
+                                getStatusText={getStatusText}
+                            />
+                        );
+                    })}
                 </div>
             ) : (
                 <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-12 text-center border border-gray-200 shadow-md">
-                    <FileText className="w-12 h-12 mx-auto text-gray-400 mb-4" />
                     <h3 className="text-xl font-medium mb-2 text-gray-800">No loans found</h3>
                     <p className="text-gray-500 mb-6">
                         You don't have any {activeTab !== 'all' ? activeTab : ''} loans yet.
@@ -149,7 +148,7 @@ const MyLoans = () => {
                     <Link to="/apply">
                         <button
                             type="button"
-                            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                            className="px-4 py-2 cursor-pointer border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                         >
                             Apply for a Loan
                         </button>

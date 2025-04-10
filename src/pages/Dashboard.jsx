@@ -2,41 +2,71 @@ import React, { useState, useEffect } from 'react';
 import TopNav from '../components/TopNav';
 import { Outlet } from 'react-router-dom';
 import Footer from '../components/Footer';
+import Toast from '../components/Toast';
+import Loader from '../components/ui/Loader';
 
 const Dashboard = () => {
     const [productData, setProductData] = useState([]);
+    const [myLoans, setMyLoans] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        const fetchLoanProducts = async () => {
+        const fetchData = async () => {
             try {
-                const response = await fetch('http://localhost:8000/api/loans/products', {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
+                setLoading(true);
+                setError(null);
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                const user = JSON.parse(localStorage.getItem('user'));
+                if (!user?.userId) throw new Error('User not authenticated');
 
-                const data = await response.json();
-                setProductData(data);
-            } catch (error) {
-                console.error('Error fetching loan products: ', error);
+                const [productsRes, loansRes] = await Promise.all([
+                    fetch('http://localhost:8000/api/loans/products'),
+                    fetch(`http://localhost:8000/api/customers/${user.userId}/loans`, {
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${localStorage.getItem('access_token')}`
+                        }
+                    }),
+                ]);
+
+                if (!productsRes.ok) throw new Error(`Failed to fetch products`);
+                if (!loansRes.ok) throw new Error(`Failed to fetch loans`);
+
+                const products = await productsRes.json();
+                const loans = await loansRes.json();
+
+                setProductData(products);
+                setMyLoans(loans);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
             }
         };
 
-        fetchLoanProducts();
+        fetchData();
     }, []);
+
+    if (loading) {
+        return <Loader />
+    }
 
     return (
         <>
             <TopNav />
-            <div className="mt-16 flex">
-                {/* Pass productData as context to child routes */}
-                <Outlet context={productData} />
+            {error && (
+                <Toast
+                    message={error}
+                    type="error"
+                    onClose={() => setError(null)}
+                />
+            )}
+
+            <div className="mt-16 flex min-h-screen">
+                <Outlet context={{ productData, myLoans }} />
             </div>
+
             <Footer />
         </>
     );
