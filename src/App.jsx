@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import { AuthProvider, useAuth } from "./components/Auth";
 import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import Landing from "./pages/Landing";
 import Container from "./components/customer/Container"
 import Profile from "./components/customer/Profile";
@@ -17,6 +18,14 @@ import MyLoans from "./components/customer/MyLoans";
 import Apply from "./components/customer/Apply";
 import CustomerProducts from "./components/customer/CustomerProducts";
 import Payments from "./components/customer/Payments";
+import Admin from "./components/admin/Admin";
+import Loans from "./components/admin/Loans";
+import LoanPayments from "./components/admin/LoanPayments";
+import Users from "./components/admin/Users";
+import Settings from "./components/admin/Settings";
+import LoanProducts from "./components/admin/LoanProducts";
+import Reports from "./components/admin/Reports";
+import Security from "./components/admin/Security";
 
 // ProtectedRoute ensures that the children are rendered only if the user is authenticated.
 const ProtectedRoute = ({ children }) => {
@@ -95,6 +104,26 @@ const App = () => {
             <Route path="profile" element={<Profile />} />
             <Route path="products" element={<CustomerProducts />} />
             <Route path="payments" element={<Payments />} />
+          </Route>
+
+          {/* Admin Routes */}
+          <Route
+            element={<ProtectedRoute>
+              <AdminDashboard
+                sidebarOpen={sidebarOpen}
+                toggleSidebar={toggleSidebar}
+                isMobile={isMobile}
+              />
+            </ProtectedRoute>}
+          >
+            <Route path="admin/dashboard" element={<Admin />} />
+            <Route path="admin/loans" element={<Loans />} />
+            <Route path="admin/payments" element={<LoanPayments />} />
+            <Route path="admin/users" element={<Users />} />
+            <Route path="admin/settings" element={<Settings />} />
+            <Route path="admin/products" element={<LoanProducts />} />
+            <Route path="admin/reports" element={<Reports />} />
+            <Route path="admin/security" element={<Security />} />
           </Route>
         </Routes>
       </Router>

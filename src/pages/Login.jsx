@@ -115,10 +115,13 @@ const Login = () => {
                 localStorage.setItem("access_token", data.tokens.access);
                 localStorage.setItem("refresh_token", data.tokens.refresh);
                 localStorage.setItem("user", JSON.stringify(data.customer));
-
+                const role = JSON.parse(localStorage.getItem('user')).role;
                 // Show loader for exactly 2 seconds before navigating
                 showLoader(true);
                 setTimeout(() => {
+                    if (role === 'admin') {
+                        navigate('/admin/dashboard')
+                    }
                     navigate("/dashboard");
                 }, 2000);
             } else {
