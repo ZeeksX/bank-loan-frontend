@@ -124,7 +124,7 @@ const ReviewAndCompleteStep = ({ formData, currentStep, toast, product, setToast
                             <div className="text-xs space-y-2">
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">Application Ref:</span>
-                                    <span className="font-medium text-gray-700">{}</span>
+                                    <span className="font-medium text-gray-700">{formData.application_reference}</span>
                                 </div>
                                 <hr className="border-gray-100" />
                                 <div className="flex justify-between">

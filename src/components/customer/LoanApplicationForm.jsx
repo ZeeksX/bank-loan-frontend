@@ -70,9 +70,9 @@ const LoanApplicationForm = ({ product }) => {
         phone: '',
         address: '',
         application_reference: '',
-        loanAmount: minAmount, // Initialize with potentially product-specific minAmount
+        loanAmount: minAmount, 
         loanPurpose: product?.product_name ?? '',
-        loanTerm: minTerm.toString(), // Initialize with potentially product-specific minTerm
+        loanTerm: minTerm,
         employmentStatus: '',
         employer: '',
         income: '',
@@ -99,14 +99,14 @@ const LoanApplicationForm = ({ product }) => {
                 .max(maxAmount, `Maximum loan amount is ${formatMinMax(maxAmount)}`)
                 .required('Loan amount is required')
                 .typeError('Loan amount must be a valid number'),
-            loanPurpose: Yup.string().required('Loan purpose is required'), // Basic check
-            loanTerm: Yup.number() // Validate term as a number
+            loanPurpose: Yup.string().required('Loan purpose is required'), 
+            loanTerm: Yup.number() 
                 .min(minTerm, `Minimum term is ${minTerm} months`)
                 .max(maxTerm, `Maximum term is ${maxTerm} months`)
                 .required('Please select a loan term')
                 .typeError('Loan term must be selected'),
         });
-    }, [minAmount, maxAmount, minTerm, maxTerm, currency, currencyLocale]); // Add currency dependencies
+    }, [minAmount, maxAmount, minTerm, maxTerm, currency, currencyLocale]); 
 
     // --- Effect to sync formData after initial product load ---
     useEffect(() => {

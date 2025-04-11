@@ -22,7 +22,7 @@ const Dashboard = () => {
 
                 const [productsRes, loansRes] = await Promise.all([
                     fetch('http://localhost:8000/api/loans/products'),
-                    fetch(`http://localhost:8000/api/customers/${user.userId}/loans`, {
+                    fetch(`http://localhost:8000/api/customers/${user.userId}/details-with-loans`, {
                         headers: {
                             "Content-Type": "application/json",
                             "Authorization": `Bearer ${localStorage.getItem('access_token')}`

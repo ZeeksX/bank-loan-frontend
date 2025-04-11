@@ -7,46 +7,47 @@ import ProductCard from '../ui/ProductCard';
 import LoanStatus from './LoanStatus';
 import RecentPayments from './RecentPayments';
 
-const cardData = [
-  {
-    id: 1,
-    title: 'Total Loans',
-    value: '3',
-    icon: <CreditCard size={16} />,
-    description: 'Active loans in your account',
-    delay: 0
-  },
-  {
-    id: 2,
-    title: 'Total Outstanding',
-    value: '$24,500',
-    icon: <DollarSign size={16} />,
-    description: 'vs last month',
-    trend: { value: 12, isPositive: false },
-    delay: 0.1
-  },
-  {
-    id: 3,
-    title: 'Next Payment',
-    value: '$820',
-    icon: <Wallet size={16} />,
-    description: 'Due on June 15, 2023',
-    delay: 0.2
-  },
-  {
-    id: 4,
-    title: 'Credit Score',
-    value: '745',
-    icon: <BarChart3 size={16} />,
-    description: 'vs last month',
-    trend: { value: 5, isPositive: true },
-    delay: 0.3
-  }
-];
-
 const Container = () => {
   const { productData, myLoans } = useOutletContext() ?? { productData: [], myLoans: [] };
   const ProductData = productData?.slice(0, 3) || [];
+
+  console.log("My Loans: ", myLoans)
+  const cardData = [
+    {
+      id: 1,
+      title: 'Total Loans',
+      value: myLoans.loanCounts.total ?? 0,
+      icon: <CreditCard size={16} />,
+      description: 'Active loans in your account',
+      delay: 0
+    },
+    {
+      id: 2,
+      title: 'Total Outstanding',
+      value: `₦${myLoans.amount ?? 0}`,
+      icon: <DollarSign size={16} />,
+      description: 'vs last month',
+      trend: { value: 12, isPositive: false },
+      delay: 0.1
+    },
+    {
+      id: 3,
+      title: 'Next Payment',
+      value: `₦${myLoans.amount ?? 0}`,
+      icon: <Wallet size={16} />,
+      description: `Due on ${myLoans.due ?? "N/A"}`,
+      delay: 0.2
+    },
+    {
+      id: 4,
+      title: 'Credit Score',
+      value: '745',
+      icon: <BarChart3 size={16} />,
+      description: 'vs last month',
+      trend: { value: 5, isPositive: true },
+      delay: 0.3
+    }
+  ];
 
   return (
     <div className="inter min-h-screen flex justify-center w-full items-center bg-gray-50">
@@ -103,7 +104,7 @@ const Container = () => {
                 icon={card.icon}
                 description={card.description}
                 trend={card.trend}
-                delay={index * 0.1} 
+                delay={index * 0.1}
               />
             ))}
           </motion.div>

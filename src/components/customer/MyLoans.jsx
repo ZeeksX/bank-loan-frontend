@@ -6,9 +6,13 @@ import LoanCard from './LoanCard';
 
 const getStatusIcon = (status) => {
     switch (status) {
-        case 'approved': // Changed 'active' to 'approved' to match your backend data
+        case 'approved':
             return <CheckCircle className="w-5 h-5 text-green-500" />;
         case 'pending':
+            return <Clock className="w-5 h-5 text-amber-500" />;
+        case 'submitted':
+            return <Clock className="w-5 h-5 text-amber-500" />;
+        case 'under_review':
             return <Clock className="w-5 h-5 text-amber-500" />;
         case 'completed':
             return <CheckCircle className="w-5 h-5 text-blue-500" />;
@@ -21,10 +25,14 @@ const getStatusIcon = (status) => {
 
 const getStatusText = (status) => {
     switch (status) {
-        case 'approved': // Changed 'active' to 'approved' to match your backend data
+        case 'approved':
             return 'Active';
         case 'pending':
             return 'Pending Approval';
+        case 'submitted':
+            return 'Submitted';
+        case 'under_review':
+            return 'Under Review';
         case 'completed':
             return 'Completed';
         case 'rejected':
@@ -75,7 +83,7 @@ const MyLoans = () => {
     };
 
     const filteredLoans = filterLoans(loans, activeTab);
-    const tabOptions = ['all', 'approved', 'pending', 'completed', 'rejected'];
+    const tabOptions = ['all', 'approved', 'pending', 'submitted', 'under_review', 'completed', 'rejected'];
 
     if (loading) {
         return <div className="text-center text-gray-700">Loading loans...</div>;
@@ -115,7 +123,7 @@ const MyLoans = () => {
                                 : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
                                 }`}
                         >
-                            {tab.charAt(0).toUpperCase() + tab.slice(1)} Loans
+                            {tab.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} Loans
                         </button>
                     ))}
                 </div>
