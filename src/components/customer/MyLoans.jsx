@@ -6,7 +6,7 @@ import LoanCard from './LoanCard';
 
 const getStatusIcon = (status) => {
     switch (status) {
-        case 'active':
+        case 'approved': // Changed 'active' to 'approved' to match your backend data
             return <CheckCircle className="w-5 h-5 text-green-500" />;
         case 'pending':
             return <Clock className="w-5 h-5 text-amber-500" />;
@@ -21,7 +21,7 @@ const getStatusIcon = (status) => {
 
 const getStatusText = (status) => {
     switch (status) {
-        case 'active':
+        case 'approved': // Changed 'active' to 'approved' to match your backend data
             return 'Active';
         case 'pending':
             return 'Pending Approval';
@@ -75,7 +75,7 @@ const MyLoans = () => {
     };
 
     const filteredLoans = filterLoans(loans, activeTab);
-    const tabOptions = ['all', 'active', 'pending', 'completed', 'rejected'];
+    const tabOptions = ['all', 'approved', 'pending', 'completed', 'rejected'];
 
     if (loading) {
         return <div className="text-center text-gray-700">Loading loans...</div>;
@@ -124,20 +124,14 @@ const MyLoans = () => {
             {/* Loan Cards */}
             {filteredLoans.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredLoans.map((loan) => {
-                        // Find the corresponding myLoan
-                        const myLoan = myLoans?.find(item => item.loan_id === loan.loan_id);
-
-                        return (
-                            <LoanCard
-                                key={loan.id || loan.loan_id}
-                                loan={loan}
-                                myLoan={myLoan}
-                                getStatusIcon={getStatusIcon}
-                                getStatusText={getStatusText}
-                            />
-                        );
-                    })}
+                    {filteredLoans.map((loan) => (
+                        <LoanCard
+                            key={loan.id || loan.loan_id}
+                            loan={loan}
+                            getStatusIcon={getStatusIcon}
+                            getStatusText={getStatusText}
+                        />
+                    ))}
                 </div>
             ) : (
                 <div className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-xl p-12 text-center border border-gray-200 shadow-md">

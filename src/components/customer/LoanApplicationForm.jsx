@@ -267,7 +267,6 @@ const LoanApplicationForm = ({ product }) => {
             const token = localStorage.getItem('access_token');
 
             const dataSent = {
-                application_reference: formData.application_reference,
                 customer_id: user?.userId,
                 product_id: product?.product_id,
                 requested_amount: formData.loanAmount,
@@ -515,7 +514,7 @@ const LoanApplicationForm = ({ product }) => {
                             <div className="pt-5">
                                 <h3 className="text-base font-semibold text-gray-800 mb-3">Loan Details</h3>
                                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                                    <div><dt className="text-gray-500">Amount:</dt><dd className="text-gray-900 font-semibold mt-0.5">{formData.loanAmount}</dd></div>
+                                    <div><dt className="text-gray-500">Amount:</dt><dd className="text-gray-900 font-semibold mt-0.5">₦{formData.loanAmount}</dd></div>
                                     <div><dt className="text-gray-500">Purpose/Type:</dt><dd className="text-gray-900 mt-0.5">{formData.loanPurpose || 'N/A'}</dd></div>
                                     <div><dt className="text-gray-500">Term:</dt><dd className="text-gray-900 mt-0.5">{formData.loanTerm ? `${formData.loanTerm} months` : 'N/A'}</dd></div>
                                 </dl>

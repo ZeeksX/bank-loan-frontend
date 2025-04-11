@@ -12,22 +12,27 @@ import { useOutletContext } from 'react-router-dom';
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { allApplications, customers, loans } = useOutletContext() ?? { allApplications: [], customers: [], loans: [] };
+  console.log("All Customers: ", customers)
 
-  const calculateStats = () => {
+  const calculateStats = (customers, loans, allApplications) => {
     const totalUsers = customers?.length || 0;
-    const activeLoans = loans?.filter(app => ['Approved', 'In Review', 'Pending'].includes(app.status)).length || 0;
+    const totalActiveLoans = customers?.reduce((count, customer) => {
+      return count + (parseInt(customer.active) || 0); 
+    }, 0) || 0;
+
     const pendingApprovals = allApplications?.filter(app => ['Pending', 'In Review'].includes(app.status)).length || 0;
-    const totalRevenue = '$1.2M';
+    const totalRevenue = '₦1.2M';
 
     return [
-      { title: 'Total Users', value: totalUsers.toLocaleString(), icon: Users, trend: '+12% from last month', color: 'blue' }, // Trend is still hardcoded example
-      { title: 'Active Loans', value: activeLoans.toLocaleString(), icon: FileText, trend: '+5% from last month', color: 'blue' }, // Trend is still hardcoded example
-      { title: 'Total Revenue', value: totalRevenue, icon: DollarSign, trend: '+18% from last month', color: 'green' }, // Trend is still hardcoded example
-      { title: 'Pending Approvals', value: pendingApprovals.toLocaleString(), icon: AlertTriangle, trend: `${pendingApprovals > 0 ? pendingApprovals : 'No'} pending`, color: 'amber' } // Example dynamic trend
+      { title: 'Total Users', value: totalUsers.toLocaleString(), icon: Users, trend: '+12% from last month', color: 'blue' },
+      { title: 'Active Loans', value: totalActiveLoans.toLocaleString(), icon: FileText, trend: '+5% from last month', color: 'blue' },
+      { title: 'Total Revenue', value: totalRevenue, icon: DollarSign, trend: '+18% from last month', color: 'green' },
+      { title: 'Pending Approvals', value: pendingApprovals.toLocaleString(), icon: AlertTriangle, trend: `${pendingApprovals > 0 ? pendingApprovals : 'No'} pending`, color: 'amber' }
     ];
   };
 
-  const statsData = calculateStats();
+  // Example usage (assuming 'customers' is your array)
+  const statsData = calculateStats(customers, loans, allApplications);
   const recentApplications = allApplications.length > 0 ? (allApplications.slice(0, 5).map((app) => ({
     id: app.id,
     customer: app.customer,
@@ -76,6 +81,21 @@ const Admin = () => {
         "Authorization": `Bearer ${localStorage.getItem('access_token')}`
       },
       body: JSON.stringify({ status: "approved" })
+    })
+    if (response.ok) {
+      const data = await response.json();
+      console.log("Data from the backend: ", data)
+    }
+
+  }
+  const handleReview = async (id) => {
+    const response = await fetch(`http://localhost:8000/api/loans/applications/${id + 1}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem('access_token')}`
+      },
+      body: JSON.stringify({ status: "under_review" })
     })
     if (response.ok) {
       const data = await response.json();
@@ -263,7 +283,7 @@ const Admin = () => {
                                   <td className="px-6 py-4">{app.date}</td>
                                   <td className="px-6 py-4 text-right">
                                     <div className="flex justify-end space-x-2">
-                                      <button onClick={() => handleView(index)} className="text-blue-600 hover:text-blue-800 text-xs p-1 font-medium">View</button>
+                                      <button onClick={() => handleReview(index)} className="text-blue-600 hover:text-blue-800 text-xs p-1 font-medium">Review</button>
                                       {app.status === 'Pending' || app.status === 'In Review' ? (
                                         <>
                                           <button onClick={() => handleApprove(index)} className="text-green-600 hover:text-green-800 text-xs p-1 font-medium">Approve</button>
@@ -305,7 +325,7 @@ const Admin = () => {
                                 <th scope="col" className="px-6 py-3">Email</th>
                                 <th scope="col" className="px-6 py-3">Registration Date</th>
                                 <th scope="col" className="px-6 py-3">Loans</th>
-                                <th scope="col" className="px-6 py-3">Status</th>
+                                <th scope="col" className="px-6 py-3">Identification Status</th>
                                 <th scope="col" className="px-6 py-3 text-right">Actions</th>
                               </tr>
                             </thead>
@@ -316,7 +336,7 @@ const Admin = () => {
                                   <td className="px-6 py-4">{customer.first_name} {customer.last_name}</td>
                                   <td className="px-6 py-4">{customer.email}</td>
                                   <td className="px-6 py-4">{customer.created_at}</td>
-                                  <td className="px-6 py-4">{customer.loans}</td>
+                                  <td className="px-6 py-4">{customer.total}</td>
                                   <td className="px-6 py-4">
                                     <div className={`px-2 py-1 rounded-full text-xs font-medium inline-flex items-center justify-center ${customer.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                       {customer.status}
