@@ -1,12 +1,10 @@
-// Profile.jsx (Converted to JSX with standard HTML tags)
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Avatar } from '@mui/material';
+import { useOutletContext } from 'react-router-dom';
 import { Check, Edit2, User, Mail, Phone, Home, Briefcase, FileText, Shield, ChevronRight, DollarSign, CreditCard } from 'lucide-react';
 import Toast from "../Toast";
 
-// --- Helper Function for Basic Button Styling ---
-// Consolidates repetitive button styling
 const getButtonClasses = (variant = 'outline', size = 'md', className = '') => {
   let baseClasses = "inline-flex items-center justify-center rounded-md border text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none";
 
@@ -29,8 +27,6 @@ const getButtonClasses = (variant = 'outline', size = 'md', className = '') => {
 
 // --- Helper Function for Basic Input Styling ---
 const getInputClasses = (className = '') => {
-  // Approximating glass-input - adjust opacity/blur/border as needed
-  // Or use a simpler style: "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
   return `w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white bg-opacity-80 backdrop-filter backdrop-blur-sm ${className}`;
 }
 
@@ -56,27 +52,29 @@ const StyledSwitch = ({ checked, onCheckedChange, ...props }) => {
   );
 };
 
-
 // --- Profile Component ---
 const Profile = () => {
+
+  const { productData, myLoans } = useOutletContext() ?? { productData: [], myLoans: [] };
+  console.log("Profile: ", myLoans)
+  const user = myLoans?.customer || []
   const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState('personal'); // State for active tab
+  const [activeTab, setActiveTab] = useState('personal');
   const [profileData, setProfileData] = useState({
-    firstName: 'Alex',
-    lastName: 'Johnson',
-    email: 'alex.johnson@example.com',
-    phone: '(555) 123-4567',
-    address: '123 Main Street, Apt 4B, New York, NY 10001',
-    occupation: 'Software Engineer',
-    employer: 'Tech Solutions Inc.',
-    income: '$95,000',
-    bankAccount: '****4321',
-    // Adding state for notification switches - needed because they are now controlled inputs
+    firstName: user.first_name,
+    lastName: user.last_name,
+    email: user.email,
+    phone: user.phone,
+    address: `${user.address}, ${user.city}, ${user.country}, ${user.country}, ${user.postal_code}` ?? '123 Main Street, Apt 4B, New York, NY 10001',
+    occupation: user.employement_status ?? "N/A",
+    employer: user.employer ?? "N/A",
+    income: `₦${user.income}`,
+    bankAccount: 'Please register your bank account',
     paymentReminders: true,
     applicationUpdates: true,
     promotionalOffers: false,
     accountAlerts: true,
-    twoFactorAuth: true, // Example state for 2FA switch
+    twoFactorAuth: true,
   });
 
   const [toast, showToast] = useState(null);
@@ -115,9 +113,8 @@ const Profile = () => {
     </div>
   );
 
-  // Helper component for notification items (no TS types, uses state)
-  const NotificationItem = ({ title, description, name }) => { // Changed props to use 'name' for state key
-    const enabled = profileData[name]; // Read state from profileData
+  const NotificationItem = ({ title, description, name }) => {
+    const enabled = profileData[name];
 
     return (
       <div className="flex justify-between items-start py-4">
@@ -125,7 +122,6 @@ const Profile = () => {
           <h4 className="font-medium text-gray-900">{title}</h4>
           <p className="text-sm text-gray-500 mt-1">{description}</p>
         </div>
-        {/* Replaced Switch component */}
         <StyledSwitch
           checked={enabled}
           onCheckedChange={(checked) => handleSwitchChange(name, checked)}
@@ -134,7 +130,6 @@ const Profile = () => {
     );
   };
 
-  // Helper component for document items (no TS types)
   const DocumentItem = ({ title, description, status }) => {
     return (
       <div className="flex justify-between items-center py-4">
@@ -170,40 +165,35 @@ const Profile = () => {
     settings: 'Settings'
   };
 
-  // --- Main Return ---
   return (
-    // Replaced AppLayout and PageTransition with divs, added padding
     <div className="bg-gray-50 min-h-screen py-8 w-full inter">
       <div className="max-w-5xl mx-auto p-4 md:p-6">
-        {/* Profile Header Card */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          // Approximating glass-card
           className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg border border-gray-200 shadow-md rounded-2xl p-6 md:p-8 mb-8"
         >
           {toast && <Toast message={toast.message} type={toast.type} onClose={() => showToast(null)} />}
           <div className="flex flex-col lg:flex-row items-center gap-6">
-              <Avatar
-                sx={{ bgcolor: "gray", height: 60, width: 60 }}
-                alt="Remy Sharp"
-                src="/broken-image.jpg"
-              >
-                {profileData.firstName?.charAt(0)}{profileData.lastName?.charAt(0)}
-              </Avatar>
+            <Avatar
+              sx={{ bgcolor: "gray", height: 60, width: 60 }}
+              alt="Remy Sharp"
+              src="/broken-image.jpg"
+            >
+              {profileData.firstName?.charAt(0)}{profileData.lastName?.charAt(0)}
+            </Avatar>
 
             <div className="flex-1 text-center lg:text-left">
               <h1 className="text-2xl font-bold text-gray-900">
                 {profileData.firstName} {profileData.lastName}
               </h1>
-              <p className="text-gray-500 text-sm mt-1"> {/* text-muted-foreground replacement */}
-                Account ID: BL-7829403 • Member since January 2025
+              <p className="text-gray-500 text-sm mt-1">
+                Member since {user.created_at}
               </p>
             </div>
 
             <div className="flex gap-3 mt-4 lg:mt-0">
-              {/* Replaced CustomButtons */}
               {isEditing ? (
                 <>
                   <button
@@ -227,7 +217,7 @@ const Profile = () => {
                   className={getButtonClasses('outline')}
                   onClick={() => setIsEditing(true)}
                 >
-                  <Edit2 size={16} className="mr-2" /> {/* Added icon spacing */}
+                  <Edit2 size={16} className="mr-2" />
                   Edit Profile
                 </button>
               )}
@@ -235,17 +225,15 @@ const Profile = () => {
           </div>
         </motion.div>
 
-        {/* Replaced Tabs Component */}
         <div className="mb-8">
-          {/* Approximating glass-card TabsList styling */}
           <div className="flex space-x-1 rounded-lg bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg p-1 border border-gray-200 shadow-sm overflow-x-auto">
             {tabs.map((tabValue) => (
               <button
                 key={tabValue}
                 onClick={() => setActiveTab(tabValue)}
                 className={`w-full px-3 py-2 text-sm font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 whitespace-nowrap ${activeTab === tabValue
-                  ? 'bg-blue-600 text-white shadow' // Active tab style
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800' // Inactive tab style
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
                   }`}
               >
                 {tabLabels[tabValue]}
@@ -254,16 +242,13 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Conditional Rendering for Tab Content */}
         <div >
-          {/* Personal Info Tab */}
           {activeTab === 'personal' && (
             <motion.div
               key="personal"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4 }}
-              // Approximating glass-card
               className="bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg border border-gray-200 shadow-md rounded-2xl p-6 md:p-8"
             >
               <h2 className="text-xl font-semibold mb-6 text-gray-900">Personal Information</h2>

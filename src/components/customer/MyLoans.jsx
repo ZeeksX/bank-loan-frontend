@@ -44,7 +44,6 @@ const getStatusText = (status) => {
 
 const MyLoans = () => {
     const [loans, setLoans] = useState([]);
-    const { productData, myLoans } = useOutletContext() ?? { productData: [], myLoans: [] };
     const [activeTab, setActiveTab] = useState('all');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
