@@ -37,15 +37,15 @@ const LoanCard = ({ loan, myLoan, getStatusIcon, getStatusText }) => {
                 </div>
                 <div>
                     <div className="text-sm text-gray-500">Amount Paid</div>
-                    <div className="font-medium text-gray-800">{combinedLoanData.amount_paid || 'N/A'}</div>
+                    <div className="font-medium text-gray-800">{combinedLoanData.amountPaid || 'N/A'}</div>
                 </div>
                 <div>
                     <div className="text-sm text-gray-500">Due Date</div>
-                    <div className="font-medium text-gray-800">{combinedLoanData.due_date || loan.due_date || 'N/A'}</div>
+                    <div className="font-medium text-gray-800">{combinedLoanData.dueDate || loan.dueDate || 'N/A'}</div>
                 </div>
                 <div>
                     <div className="text-sm text-gray-500">Next Payment</div>
-                    <div className="font-medium text-gray-800">{combinedLoanData.next_payment || 'N/A'}</div>
+                    <div className="font-medium text-gray-800">{combinedLoanData.nextPayment || 'N/A'}</div>
                 </div>
             </div>
 
@@ -65,7 +65,7 @@ const LoanCard = ({ loan, myLoan, getStatusIcon, getStatusText }) => {
             )}
 
             <div className="flex justify-between items-center mt-4">
-                <div className="text-xs text-gray-500">Applied on {combinedLoanData.date || loan.date}</div>
+                <div className="text-xs text-gray-500">Applied on {combinedLoanData.start_date || loan.start_date}</div>
                 <Link to={`/loans/${combinedLoanData.id || loan.id}`}>
                     <button
                         type="button"
