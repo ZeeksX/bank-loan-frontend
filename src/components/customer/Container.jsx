@@ -136,7 +136,7 @@ const Container = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Loan Status */}
           <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h2 className="text-xl font-semibold mb-6">Loan Application Status</h2>
+            <h2 className="text-xl font-semibold mb-6">Recent Loan Application Status</h2>
             {/* Pass the most recent loan to the LoanStatus component */}
             <LoanStatus loan={recentLoan} />
           </div>

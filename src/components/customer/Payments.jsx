@@ -1,18 +1,43 @@
-import React from 'react';
-// Import icons from lucide-react
-import { CheckCircle2, Clock, XCircle, TrendingUp, TrendingDown } from 'lucide-react'; // Added more icons for potential statuses
+import React, { useEffect, useState } from 'react';
+import { CheckCircle2, Clock, XCircle } from 'lucide-react';
 
 const Payments = () => {
-    // Define the data for the payments/loans
-    const paymentData = [
-        { id: 1, loan: 'Home Renovation Loan', amount: '$540', date: 'May 15, 2023', status: 'Completed' },
-        { id: 2, loan: 'Salary Deposit', amount: '$2,500', date: 'May 12, 2023', status: 'Completed' },
-        { id: 3, loan: 'Education Loan Payment', amount: '$280', date: 'May 10, 2023', status: 'Completed' },
-        { id: 4, loan: 'Car Loan Payment', amount: '$450', date: 'May 5, 2023', status: 'Completed' },
-        { id: 5, loan: 'Utility Bill', amount: '$120', date: 'June 1, 2023', status: 'Pending' },
-        { id: 6, loan: 'Consulting Fee', amount: '$1,200', date: 'June 3, 2023', status: 'Completed' },
-        { id: 7, loan: 'Subscription Renewal', amount: '$50', date: 'June 5, 2023', status: 'Failed' },
-    ];
+    const [paymentData, setPaymentData] = useState([]);
+    const customerId = JSON.parse(localStorage.getItem('user')).userId
+
+    useEffect(() => {
+        const fetchPaymentHistory = async () => {
+            try {
+                const response = await fetch(`http://localhost:8000/api/customers/${customerId}/payments`, {
+                    method: "GET",
+                    headers: {
+                        'Content-Type': "application/json",
+                        'Authorization': `Bearer ${localStorage.getItem("access_token")}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                const formattedPayments = data.map(payment => ({
+                    id: payment.transaction_id,
+                    loan: payment.loan_name || `Loan ID: ${payment.loan_id}`,
+                    amount: `₦${parseFloat(payment.amount_paid).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
+                    date: new Date(payment.payment_date).toLocaleDateString(),
+                    status: payment.status === 'completed' ? 'Completed' :
+                        payment.status === 'pending' ? 'Pending' :
+                            payment.status === 'failed' ? 'Failed' :
+                                payment.status.charAt(0).toUpperCase() + payment.status.slice(1),
+                }));
+                setPaymentData(formattedPayments);
+            } catch (error) {
+                console.error("Error fetching payment history:", error);
+                setPaymentData([]);
+            }
+        };
+
+        fetchPaymentHistory();
+    }, [customerId]);
 
     // Helper function to render status with appropriate icon and styling
     const renderStatus = (status) => {
@@ -47,22 +72,21 @@ const Payments = () => {
         }
     };
 
-    // Helper function to render amount with type indicator
+    // Helper function to render amount
     const renderAmount = (amount) => {
         return (
-            <span className='flex items-center text-red-600'>
+            <span className='flex items-center text-gray-900 font-medium'>
                 {amount}
             </span>
         );
     };
-
 
     return (
         <div className="p-4 md:p-6 lg:p-8 bg-gray-50 min-h-screen w-full">
             <h1 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-6">Payment History</h1>
 
             <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                <div className="overflow-x-auto"> {/* Makes table responsive on small screens */}
+                <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-100">
                             <tr>
@@ -73,10 +97,10 @@ const Payments = () => {
                                     Description
                                 </th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Amount
+                                    Amount Paid
                                 </th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Date
+                                    Payment Date
                                 </th>
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
@@ -90,7 +114,7 @@ const Payments = () => {
                                         {item.id}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                        {item.loan} {/* Assuming 'loan' field is the description */}
+                                        {item.loan}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                                         {renderAmount(item.amount)}
@@ -106,7 +130,6 @@ const Payments = () => {
                         </tbody>
                     </table>
                 </div>
-                {/* Optional: Add Pagination Controls Here */}
                 {paymentData.length === 0 && (
                     <div className="text-center p-6 text-gray-500">
                         No payment history found.
