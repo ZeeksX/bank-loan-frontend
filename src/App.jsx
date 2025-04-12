@@ -21,7 +21,7 @@ import Admin from "./components/admin/Admin";
 import Loans from "./components/admin/Loans";
 import LoanPayments from "./components/admin/LoanPayments";
 import Users from "./components/admin/Users";
-import Settings from "./components/admin/Settings";
+import AdminProfile from "./components/admin/Profile";
 import LoanProducts from "./components/admin/LoanProducts";
 import Reports from "./components/admin/Reports";
 import Security from "./components/admin/Security";
@@ -53,7 +53,7 @@ const AdminRoute = ({ children }) => {
 const App = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
+  const role = JSON.parse(localStorage.getItem('user')).role
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
   };
@@ -140,14 +140,18 @@ const App = () => {
             <Route path="admin/loans" element={<Loans />} />
             <Route path="admin/payments" element={<LoanPayments />} />
             <Route path="admin/users" element={<Users />} />
-            <Route path="admin/settings" element={<Settings />} />
+            <Route path="admin/profile" element={<AdminProfile />} />
             <Route path="admin/products" element={<LoanProducts />} />
             <Route path="admin/reports" element={<Reports />} />
             <Route path="admin/security" element={<Security />} />
           </Route>
 
           {/* Catch-all route redirects to login */}
-          <Route path="*" element={<Navigate to="/dashboard" />} />
+          <Route
+            path="*"
+            element={<Navigate to={role === 'customer' ? '/dashboard' : '/admin/dashboard'} />}
+          />
+
         </Routes>
       </Router>
     </AuthProvider>

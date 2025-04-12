@@ -44,7 +44,7 @@ const LoanCard = ({ loan, getStatusIcon, getStatusText }) => {
                 </div>
             </div>
 
-            {(loan.status === 'approved' || loan.status === 'completed') && (loan.progress > 0) && (
+            {(loan.status === 'approved' || loan.status === 'active' || loan.status === 'completed') && (loan.progress > 0) && (
                 <div className="mb-6">
                     <div className="flex justify-between mb-1 text-sm">
                         <span className="text-gray-600">Repayment Progress</span>

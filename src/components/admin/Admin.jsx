@@ -12,12 +12,11 @@ import { useOutletContext } from 'react-router-dom';
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { allApplications, customers, loans } = useOutletContext() ?? { allApplications: [], customers: [], loans: [] };
-  console.log("All Customers: ", customers)
 
   const calculateStats = (customers, loans, allApplications) => {
     const totalUsers = customers?.length || 0;
     const totalActiveLoans = customers?.reduce((count, customer) => {
-      return count + (parseInt(customer.active) || 0); 
+      return count + (parseInt(customer.active) || 0);
     }, 0) || 0;
 
     const pendingApprovals = allApplications?.filter(app => ['Pending', 'In Review'].includes(app.status)).length || 0;
@@ -41,14 +40,6 @@ const Admin = () => {
     status: app.status,
     date: app.date
   }))) : [];
-
-  const reports = [
-    { id: 1, name: 'Monthly Loan Summary', period: 'March 2023', generatedOn: '2023-04-01', status: 'Completed' },
-    { id: 2, name: 'User Acquisition Report', period: 'March 2023', generatedOn: '2023-04-01', status: 'Completed' },
-    { id: 3, name: 'Revenue Analysis', period: 'March 2023', generatedOn: '2023-04-01', status: 'Completed' },
-    { id: 4, name: 'Monthly Loan Summary', period: 'April 2023', generatedOn: '2023-05-01', status: 'In Progress' },
-    { id: 5, name: 'User Acquisition Report', period: 'April 2023', generatedOn: '2023-05-01', status: 'In Progress' },
-  ];
 
   // Helper function for status colors (Light mode only)
   const getStatusColor = (status) => {
@@ -107,7 +98,6 @@ const Admin = () => {
   const handleEdit = (id) => console.log(`Edit item ${id}`);
   const handleSuspend = (id) => console.log(`Suspend item ${id}`);
   const handleActivate = (id) => console.log(`Activate item ${id}`);
-  const handleDownload = (id) => console.log(`Download item ${id}`);
 
   const handleTabChange = (tabValue) => {
     setActiveTab(tabValue);
@@ -157,15 +147,6 @@ const Admin = () => {
                       }`}
                   >
                     Users
-                  </button>
-                  <button
-                    onClick={() => handleTabChange('reports')}
-                    className={`w-1/2 cursor-pointer sm:w-auto inline-block p-4 border-b-2 rounded-t-lg font-medium text-center ${activeTab === 'reports'
-                      ? 'text-blue-600 border-blue-600'
-                      : 'border-transparent hover:text-gray-600 hover:border-gray-300'
-                      }`}
-                  >
-                    Reports
                   </button>
                 </nav>
               </div>
@@ -351,59 +332,6 @@ const Admin = () => {
                                       ) : (
                                         <button onClick={() => handleActivate(customer.id)} className="text-green-600 hover:text-green-800 text-xs p-1 font-medium">Activate</button>
                                       )}
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                </div>
-              )}
-
-
-              {/* Reports Tab Content */}
-              {activeTab === 'reports' && (
-                <div className="space-y-4">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.1 }}
-                  >
-                    <div className="border bg-white rounded-lg shadow-sm mt-8">
-                      <div className="p-4">
-                        <h3 className="text-lg font-semibold text-gray-900">Monthly Reports</h3>
-                      </div>
-                      <div className="p-4 pt-0">
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-sm text-left text-gray-500">
-                            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                              <tr>
-                                <th scope="col" className="px-6 py-3">Report Name</th>
-                                <th scope="col" className="px-6 py-3">Period</th>
-                                <th scope="col" className="px-6 py-3">Generated On</th>
-                                <th scope="col" className="px-6 py-3">Status</th>
-                                <th scope="col" className="px-6 py-3 text-right">Actions</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {reports.map((report) => (
-                                <tr key={report.id} className="bg-white border-b hover:bg-gray-50">
-                                  <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{report.name}</td>
-                                  <td className="px-6 py-4">{report.period}</td>
-                                  <td className="px-6 py-4">{report.generatedOn}</td>
-                                  <td className="px-6 py-4">
-                                    <div className={`px-2 py-1 rounded-full text-xs font-medium inline-flex items-center justify-center ${report.status === 'Completed' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}`}>
-                                      {report.status}
-                                    </div>
-                                  </td>
-                                  <td className="px-6 py-4 text-right">
-                                    <div className="flex justify-end space-x-2">
-                                      <button onClick={() => handleView(report.id)} className="text-blue-600 hover:text-blue-800 text-xs p-1 font-medium">View</button>
-                                      <button onClick={() => handleDownload(report.id)} className="text-green-600 hover:text-green-800 text-xs p-1 font-medium">Download</button>
                                     </div>
                                   </td>
                                 </tr>

@@ -35,23 +35,13 @@ const Sidebar = () => {
       icon: CreditCard,
       path: '/admin/payments',
     },
-    {
-      title: 'Financial Reports',
-      icon: BarChart,
-      path: '/admin/reports',
-    },
   ];
 
   const settingsMenuItems = [
     {
-      title: 'General Settings',
+      title: 'Profile',
       icon: Settings,
-      path: '/admin/settings',
-    },
-    {
-      title: 'Security',
-      icon: Shield,
-      path: '/admin/security',
+      path: '/admin/profile',
     },
     {
       title: 'Loan Products',
@@ -66,14 +56,14 @@ const Sidebar = () => {
       <div className="flex items-center p-6">
         <Link to="/" className="flex  items-center gap-2">
           <motion.div
-            //   initial={{ rotate: 0 }} // Keep or remove animation as preferred
-            //   animate={{ rotate: 360 }}
-            //   transition={{ duration: 1, ease: "easeInOut" }}
+            initial={{ rotate: 0 }}
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, ease: "easeInOut" }}
             className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-blue-400 flex items-center justify-center"
           >
             <span className="text-white font-bold text-sm">B</span>
           </motion.div>
-          <span className="font-semibold text-xl text-zinc-900">BankLoan</span> {/* Adjusted font-weight and color */}
+          <span className="font-semibold text-xl text-zinc-900">BankLoan</span>
         </Link>
       </div>
 

@@ -8,6 +8,8 @@ const getStatusIcon = (status) => {
     switch (status) {
         case 'approved':
             return <CheckCircle className="w-5 h-5 text-green-500" />;
+        case 'active':
+            return <CheckCircle className="w-5 h-5 text-green-500" />;
         case 'pending':
             return <Clock className="w-5 h-5 text-amber-500" />;
         case 'submitted':
@@ -26,7 +28,9 @@ const getStatusIcon = (status) => {
 const getStatusText = (status) => {
     switch (status) {
         case 'approved':
-            return 'Active';
+            return 'Approved';
+        case 'active':
+            return 'Approved';
         case 'pending':
             return 'Pending Approval';
         case 'submitted':
@@ -78,11 +82,17 @@ const MyLoans = () => {
 
     const filterLoans = (loans, status) => {
         if (!status || status === 'all') return loans;
+        if (status === 'approved') {
+            return loans.filter(loan => loan.status === 'approved' || loan.status === 'active');
+        }
+        if (status === 'pending') {
+            return loans.filter(loan => loan.status === 'pending' || loan.status === 'under_review');
+        }
         return loans.filter(loan => loan.status === status);
     };
 
     const filteredLoans = filterLoans(loans, activeTab);
-    const tabOptions = ['all', 'approved', 'pending', 'submitted', 'under_review', 'completed', 'rejected'];
+    const tabOptions = ['all', 'approved', 'pending', 'submitted', 'completed', 'rejected'];
 
     if (loading) {
         return <div className="text-center text-gray-700">Loading loans...</div>;
