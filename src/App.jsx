@@ -11,7 +11,7 @@ import { AuthProvider, useAuth } from "./components/Auth";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Landing from "./pages/Landing";
-import Container from "./components/customer/Container"
+import Container from "./components/customer/Container";
 import Profile from "./components/customer/Profile";
 import MyLoans from "./components/customer/MyLoans";
 import Apply from "./components/customer/Apply";
@@ -53,7 +53,13 @@ const AdminRoute = ({ children }) => {
 const App = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const role = JSON.parse(localStorage.getItem('user')).role
+
+  // Safely extracting role from localStorage
+  const storedUser = localStorage.getItem("user")
+    ? JSON.parse(localStorage.getItem("user"))
+    : null;
+  const role = storedUser && storedUser.role ? storedUser.role : "";
+
   const toggleSidebar = () => {
     setSidebarOpen((prev) => !prev);
   };
@@ -79,18 +85,11 @@ const App = () => {
           {/* Public Routes */}
           <Route
             path="/"
-            element={
-              <Landing
-                isMobile={isMobile}
-              />
-            }
+            element={<Landing isMobile={isMobile} />}
           />
           <Route
             path="/login"
-            element={
-              <Login
-                isMobile={isMobile} />
-            }
+            element={<Login isMobile={isMobile} />}
           />
           <Route
             path="/register"
@@ -146,12 +145,15 @@ const App = () => {
             <Route path="admin/security" element={<Security />} />
           </Route>
 
-          {/* Catch-all route redirects to login */}
+          {/* Catch-all route redirects based on role */}
           <Route
             path="*"
-            element={<Navigate to={role === 'customer' ? '/dashboard' : '/admin/dashboard'} />}
+            element={
+              <Navigate
+                to={role === "customer" ? "/dashboard" : "/admin/dashboard"}
+              />
+            }
           />
-
         </Routes>
       </Router>
     </AuthProvider>
