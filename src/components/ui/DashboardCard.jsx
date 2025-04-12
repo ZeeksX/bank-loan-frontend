@@ -5,8 +5,6 @@ const DashboardCard = ({
     title,
     value,
     icon,
-    description,
-    trend,
     delay = 0,
     className = '',
 }) => {
@@ -25,15 +23,6 @@ const DashboardCard = ({
             </div>
 
             <p className="text-2xl font-bold mt-2 text-gray-900">{value}</p>
-
-            <div className="flex items-center mt-1">
-                {trend && (
-                    <span className={`text-sm ${trend.isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                        {trend.isPositive ? '+' : ''}{trend.value}%
-                    </span>
-                )}
-                <span className="text-gray-500 text-sm ml-1">{description}</span>
-            </div>
         </motion.div>
     );
 };

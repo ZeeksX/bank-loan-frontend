@@ -1,24 +1,51 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, BarChart3, CreditCard, DollarSign, LineChart, Wallet } from 'lucide-react';
+import { ArrowRight, BarChart3, CreditCard, DollarSign, Wallet } from 'lucide-react';
 import DashboardCard from '../ui/DashboardCard';
 import ProductCard from '../ui/ProductCard';
 import LoanStatus from './LoanStatus';
 import RecentPayments from './RecentPayments';
 
 const Container = () => {
-  const { productData, myLoans } = useOutletContext() ?? { productData: [], myLoans: [] };
-  const ProductData = productData?.slice(0, 3) || [];
+  const { productData, myLoans } = useOutletContext() ?? { productData: [], myLoans: {} };
+  const [loans, setLoans] = useState([]);
+  const customerId = JSON.parse(localStorage.getItem('user'))?.userId;
 
-  console.log("My Loans: ", myLoans)
+  useEffect(() => {
+    const fetchLoans = async () => {
+      try {
+        const response = await fetch(`http://localhost:8000/api/loans/customer/${customerId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          }
+        });
+        if (!response.ok) throw new Error('Error fetching loans');
+        const data = await response.json();
+        console.log('All my loans: ', data);
+        setLoans(data.data);
+      } catch (err) {
+        console.error("Error fetching customer loans: ", err.message);
+      }
+    };
+
+    fetchLoans();
+  }, [customerId]);
+
+  // Assuming loan applications are returned as an array inside myLoans.data
+  // and that they are sorted (or you need to sort them by date)
+  const recentLoan = loans && loans.length > 0
+    ? loans[loans.length - 1]  // assuming the latest is last
+    : null;
+  console.log("Recent Loan", recentLoan)
   const cardData = [
     {
       id: 1,
       title: 'Total Loans',
-      value: myLoans.loanCounts.total ?? 0,
+      value: myLoans.loanCounts?.total ?? 0,
       icon: <CreditCard size={16} />,
-      description: 'Active loans in your account',
       delay: 0
     },
     {
@@ -26,8 +53,6 @@ const Container = () => {
       title: 'Total Outstanding',
       value: `₦${myLoans.amount ?? 0}`,
       icon: <DollarSign size={16} />,
-      description: 'vs last month',
-      trend: { value: 12, isPositive: false },
       delay: 0.1
     },
     {
@@ -41,10 +66,8 @@ const Container = () => {
     {
       id: 4,
       title: 'Credit Score',
-      value: '745',
+      value: myLoans.customer?.credit_score ?? 'N/A',
       icon: <BarChart3 size={16} />,
-      description: 'vs last month',
-      trend: { value: 5, isPositive: true },
       delay: 0.3
     }
   ];
@@ -96,15 +119,14 @@ const Container = () => {
             transition={{ duration: 0.6 }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
           >
-            {cardData.map((card, index) => (
+            {cardData.map((card) => (
               <DashboardCard
                 key={card.id}
                 title={card.title}
                 value={card.value}
                 icon={card.icon}
                 description={card.description}
-                trend={card.trend}
-                delay={index * 0.1}
+                delay={card.delay}
               />
             ))}
           </motion.div>
@@ -115,7 +137,8 @@ const Container = () => {
           {/* Loan Status */}
           <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
             <h2 className="text-xl font-semibold mb-6">Loan Application Status</h2>
-            <LoanStatus />
+            {/* Pass the most recent loan to the LoanStatus component */}
+            <LoanStatus loan={recentLoan} />
           </div>
 
           {/* Recent Payments */}
@@ -149,19 +172,21 @@ const Container = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {ProductData.length > 0 ? (ProductData.map((product) => (
-              <motion.div
-                key={product.product_id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: product.id * 0.1 }}
-                whileHover={{ y: -5 }}
-                className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm"
-              >
-                <ProductCard product={product} />
-              </motion.div>
-            ))) : (
-              <div className='inter text-2xl font-bold'> No Loan product available</div>
+            {productData.length > 0 ? (
+              productData.slice(0, 3).map((product) => (
+                <motion.div
+                  key={product.product_id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 }}
+                  whileHover={{ y: -5 }}
+                  className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm"
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))
+            ) : (
+              <div className="inter text-2xl font-bold">No Loan product available</div>
             )}
           </div>
         </div>
