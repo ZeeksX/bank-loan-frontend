@@ -25,6 +25,7 @@ import Settings from "./components/admin/Settings";
 import LoanProducts from "./components/admin/LoanProducts";
 import Reports from "./components/admin/Reports";
 import Security from "./components/admin/Security";
+import LoanInformation from "./components/customer/LoanInformation";
 
 // ProtectedRoute ensures that the children are rendered only if the user is authenticated.
 const ProtectedRoute = ({ children }) => {
@@ -120,6 +121,7 @@ const App = () => {
             <Route path="profile" element={<Profile />} />
             <Route path="products" element={<CustomerProducts />} />
             <Route path="payments" element={<Payments />} />
+            <Route path="loans/:id" element={<LoanInformation />} />
           </Route>
 
           {/* Admin Routes */}

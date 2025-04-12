@@ -61,10 +61,10 @@ const LoanCard = ({ loan, getStatusIcon, getStatusText }) => {
 
             <div className="flex justify-between items-center mt-4">
                 <div className="text-xs text-gray-500">Applied on {loan.start_date}</div>
-                <Link to={`/loans/${loan.id || loan.id}`}>
+                <Link to={`/loans/${loan.id}`} state={loan}>
                     <button
                         type="button"
-                        className="px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                        className="px-3 py-1.5 cursor-pointer hover:bg-blue-500 hover:text-white border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                     >
                         View Details
                     </button>
