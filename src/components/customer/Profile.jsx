@@ -167,7 +167,7 @@ const Profile = () => {
 
   const handleUploadSuccess = (uploadedDoc) => {
     setMyDocuments(docs =>
-      docs.map(doc =>
+      docs.data.map(doc =>
         doc.type === uploadedDoc.document_type
           ? { ...doc, status: 'pending', uploadedAt: new Date().toISOString() }
           : doc
