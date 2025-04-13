@@ -4,6 +4,12 @@ import { motion } from 'framer-motion';
 import { Menu, X, Bell, User, LogOut } from 'lucide-react';
 import { useAuth } from "./Auth";
 import Loader from "./ui/Loader";
+import Button from '@mui/material/Button'; // Import Material UI Button
+import Dialog from '@mui/material/Dialog'; // Import Material UI Dialog
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 
 const TopNav = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -13,6 +19,8 @@ const TopNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const [openLogoutDialog, setOpenLogoutDialog] = useState(false); // State for the dialog
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -50,6 +58,20 @@ const TopNav = () => {
     }, 2000);
 
     setIsProfileDropdownOpen(false);
+    setIsMobileMenuOpen(false); // Close mobile menu on logout
+  };
+
+  const handleOpenLogoutDialog = () => {
+    setOpenLogoutDialog(true);
+  };
+
+  const handleCloseLogoutDialog = () => {
+    setOpenLogoutDialog(false);
+  };
+
+  const handleConfirmLogout = () => {
+    handleCloseLogoutDialog();
+    handleLogout();
   };
 
   const navLinks = [
@@ -93,12 +115,12 @@ const TopNav = () => {
               <button
                 key={link.path}
                 className={`
-                  text-sm font-medium rounded-md
-                  ${isLinkActive(link.path)
+                                    text-sm font-medium rounded-md
+                                    ${isLinkActive(link.path)
                     ? 'text-blue-600'
                     : 'text-zinc-600 hover:text-zinc-900'
                   }
-                `}
+                                `}
               >
                 <Link to={link.path}>
                   {link.name}
@@ -136,11 +158,11 @@ const TopNav = () => {
                   </Link>
                   <button
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
-                    onClick={handleLogout}
+                    onClick={handleOpenLogoutDialog} // Open dialog instead of direct logout
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout
-                  </button>   
+                  </button>
                 </div>
               )}
             </div>
@@ -170,12 +192,12 @@ const TopNav = () => {
               <button
                 key={link.path}
                 className={`
-                  w-full justify-start py-3 text-base
-                  ${isLinkActive(link.path)
+                                    w-full justify-start py-3 text-base
+                                    ${isLinkActive(link.path)
                     ? 'text-blue-600 bg-blue-50 font-medium'
                     : 'text-zinc-700 hover:text-zinc-900'
                   }
-                `}
+                                `}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <Link to={link.path}>
@@ -187,7 +209,7 @@ const TopNav = () => {
             {/* Mobile logout button */}
             <button
               className="w-full justify-start py-3 text-base text-red-600 hover:bg-red-50 flex items-center"
-              onClick={handleLogout}
+              onClick={handleOpenLogoutDialog} // Open dialog instead of direct logout
             >
               <LogOut className="h-5 w-5 mr-2" />
               Logout
@@ -195,6 +217,30 @@ const TopNav = () => {
           </nav>
         </div>
       </motion.div>
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog
+        open={openLogoutDialog}
+        className='inter'
+        onClose={handleCloseLogoutDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"Confirm Logout"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to logout?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseLogoutDialog}>Cancel</Button>
+          <Button onClick={handleConfirmLogout} autoFocus>
+            Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

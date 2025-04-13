@@ -74,7 +74,7 @@ const AdminDashboard = () => {
     <div className='flex flex-row'>
       <Sidebar />
       <div className='ml-64 flex flex-col min-h-screen w-full'>
-        <Outlet context={{ allApplications, customers, loans }} />
+        <Outlet context={{ allApplications, customers, loans, setAllApplications }} />
       </div>
     </div>
   );

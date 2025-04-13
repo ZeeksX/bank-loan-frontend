@@ -12,12 +12,18 @@ import {
 import { motion } from "framer-motion";
 import { useAuth } from "./Auth";
 import Loader from "./ui/Loader";
+import Button from '@mui/material/Button'; // Import Material UI Button
+import Dialog from '@mui/material/Dialog'; // Import Material UI Dialog
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 
 const Sidebar = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
-  // Initialize loading as a boolean false instead of an empty array.
   const [loading, setLoading] = useState(false);
+  const [openLogoutDialog, setOpenLogoutDialog] = useState(false); // State for the dialog
 
   const adminMenuItems = [
     {
@@ -62,7 +68,20 @@ const Sidebar = () => {
       logout();
       navigate("/login");
     }, 2000);
-  }
+  };
+
+  const handleOpenLogoutDialog = () => {
+    setOpenLogoutDialog(true);
+  };
+
+  const handleCloseLogoutDialog = () => {
+    setOpenLogoutDialog(false);
+  };
+
+  const handleConfirmLogout = () => {
+    handleCloseLogoutDialog();
+    handleLogout();
+  };
 
   return (
     <>
@@ -70,7 +89,7 @@ const Sidebar = () => {
       <div className="inter w-64 fixed min-h-screen bg-white shadow-md flex flex-col">
         {/* Sidebar Header */}
         <div className="flex items-center p-6">
-          <Link to="/" className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <motion.div
               initial={{ rotate: 0 }}
               animate={{ rotate: 360 }}
@@ -80,7 +99,7 @@ const Sidebar = () => {
               <span className="text-white font-bold text-sm">B</span>
             </motion.div>
             <span className="font-semibold text-xl text-zinc-900">BankLoan</span>
-          </Link>
+          </div>
         </div>
 
         {/* Sidebar Menu Content */}
@@ -127,14 +146,38 @@ const Sidebar = () => {
         {/* Sidebar Footer */}
         <div className="p-4">
           <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            onClick={handleOpenLogoutDialog}
+            className="flex cursor-pointer items-center gap-2 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
           >
             <LogOut className="w-5 h-5" />
             <span>Exit Admin</span>
           </button>
         </div>
       </div>
+
+      {/* Logout Confirmation Dialog */}
+      <Dialog
+        open={openLogoutDialog}
+        sx={{fontFamily: "inter"}}
+        onClose={handleCloseLogoutDialog}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"Confirm Exit"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to log out?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseLogoutDialog}>Cancel</Button>
+          <Button onClick={handleConfirmLogout} autoFocus>
+            Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

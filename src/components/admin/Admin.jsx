@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Users,
@@ -8,10 +8,12 @@ import {
 } from 'lucide-react';
 import StatsCard from '../ui/StatsCard';
 import { useOutletContext } from 'react-router-dom';
+import Toast from "../Toast";
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const { allApplications, customers, loans } = useOutletContext() ?? { allApplications: [], customers: [], loans: [] };
+  const { allApplications, customers, loans, setAllApplications } = useOutletContext() ?? { allApplications: [], customers: [], loans: [], setAllApplications: [] };
+  const [toast, setToast] = useState({ message: '', type: '' });
 
   const calculateStats = (customers, loans, allApplications) => {
     const totalUsers = customers?.length || 0;
@@ -61,40 +63,102 @@ const Admin = () => {
     }
   };
 
-
   // Placeholder for button actions
   const handleView = (id) => console.log(`View item ${id}`);
+
   const handleApprove = async (id) => {
-    const response = await fetch(`http://localhost:8000/api/loans/applications/${id + 1}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem('access_token')}`
-      },
-      body: JSON.stringify({ status: "approved" })
-    })
-    if (response.ok) {
-      const data = await response.json();
-      console.log("Data from the backend: ", data)
-    }
+    try {
+      const response = await fetch(`http://localhost:8000/api/loans/applications/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify({ status: "approved" })
+      });
 
-  }
+      if (!response.ok) {
+        throw new Error('Failed to approve application');
+      }
+
+      const data = await response.json();
+      console.log("Data from the backend: ", data);
+      setToast({ message: 'Application approved successfully', type: 'success' });
+
+      // Update the application status in the local state
+      const updatedApplications = allApplications.map(app =>
+        app.id === id ? { ...app, status: 'Approved' } : app
+      );
+      setAllApplications(updatedApplications);
+
+    } catch (error) {
+      console.error("Error approving application: ", error);
+      setToast({ message: 'Failed to approve application', type: 'error' });
+    }
+  };
+
   const handleReview = async (id) => {
-    const response = await fetch(`http://localhost:8000/api/loans/applications/${id + 1}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem('access_token')}`
-      },
-      body: JSON.stringify({ status: "under_review" })
-    })
-    if (response.ok) {
-      const data = await response.json();
-      console.log("Data from the backend: ", data)
-    }
+    try {
+      const response = await fetch(`http://localhost:8000/api/loans/applications/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify({ status: "under_review" })
+      });
 
-  }
-  const handleReject = (id) => console.log(`Reject item ${id}`);
+      if (!response.ok) {
+        throw new Error('Failed to set application to under review');
+      }
+
+      const data = await response.json();
+      console.log("Data from the backend: ", data);
+      setToast({ message: 'Application set to under review', type: 'success' });
+
+      // Update the application status in the local state
+      const updatedApplications = allApplications.map(app =>
+        app.id === id ? { ...app, status: 'In Review' } : app
+      );
+      setAllApplications(updatedApplications);
+
+    } catch (error) {
+      console.error("Error setting application to under review: ", error);
+      setToast({ message: 'Failed to set application to under review', type: 'error' });
+    }
+  };
+
+  const handleReject = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/loans/applications/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem('access_token')}`
+        },
+        body: JSON.stringify({ status: "rejected" })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reject application');
+      }
+
+      const data = await response.json();
+      console.log("Data from the backend: ", data);
+      setToast({ message: 'Application rejected', type: 'success' });
+
+      // Update the application status in the local state
+      const updatedApplications = allApplications.map(app =>
+        app.id === id ? { ...app, status: 'Rejected' } : app
+      );
+      setAllApplications(updatedApplications);
+
+    } catch (error) {
+      console.error("Error rejecting application: ", error);
+      setToast({ message: 'Failed to reject application', type: 'error' });
+    }
+  };
+
   const handleEdit = (id) => console.log(`Edit item ${id}`);
   const handleSuspend = (id) => console.log(`Suspend item ${id}`);
   const handleActivate = (id) => console.log(`Activate item ${id}`);
@@ -105,6 +169,7 @@ const Admin = () => {
 
   return (
     <>
+      {toast.message && <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: '' })} />}
       <div className="min-h-screen bg-gray-50 inter">
         <div className="flex min-h-screen w-full">
           <motion.main
@@ -124,8 +189,8 @@ const Admin = () => {
                   <button
                     onClick={() => handleTabChange('overview')}
                     className={`w-1/2 cursor-pointer sm:w-auto inline-block p-4 border-b-2 rounded-t-lg font-medium text-center ${activeTab === 'overview'
-                      ? 'text-blue-600 border-blue-600' // Active state styles
-                      : 'border-transparent hover:text-gray-600 hover:border-gray-300' // Inactive state styles
+                      ? 'text-blue-600 border-blue-600'
+                      : 'border-transparent hover:text-gray-600 hover:border-gray-300'
                       }`}
                   >
                     Overview
@@ -250,7 +315,7 @@ const Admin = () => {
                               </tr>
                             </thead>
                             <tbody>
-                              {allApplications.map((app, index) => (
+                              {allApplications.map((app) => (
                                 <tr key={app.id} className="bg-white border-b hover:bg-gray-50">
                                   <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{app.id}</td>
                                   <td className="px-6 py-4">{app.customer}</td>
@@ -264,11 +329,11 @@ const Admin = () => {
                                   <td className="px-6 py-4">{app.date}</td>
                                   <td className="px-6 py-4 text-right">
                                     <div className="flex justify-end space-x-2">
-                                      <button onClick={() => handleReview(index)} className="text-blue-600 hover:text-blue-800 text-xs p-1 font-medium">Review</button>
+                                      <button onClick={() => handleReview(app.id)} className="text-blue-600 cursor-pointer hover:text-blue-800 text-xs p-1 font-medium">Review</button>
                                       {app.status === 'Pending' || app.status === 'In Review' ? (
                                         <>
-                                          <button onClick={() => handleApprove(index)} className="text-green-600 hover:text-green-800 text-xs p-1 font-medium">Approve</button>
-                                          <button onClick={() => handleReject(index)} className="text-red-600 hover:text-red-800 text-xs p-1 font-medium">Reject</button>
+                                          <button onClick={() => handleApprove(app.id)} className="text-green-600 cursor-pointer hover:text-green-800 text-xs p-1 font-medium">Approve</button>
+                                          <button onClick={() => handleReject(app.id)} className="text-red-600 cursor-pointer hover:text-red-800 text-xs p-1 font-medium">Reject</button>
                                         </>
                                       ) : null}
                                     </div>
