@@ -1,6 +1,6 @@
 import React from 'react'
 
-const StatsCard = ({ title, value, icon: Icon, trend, color = 'blue' }) => {
+const StatsCard = ({ title, value, icon: Icon, color = 'blue' }) => {
     const colorClasses = {
         blue: 'text-blue-600',
         green: 'text-green-600',
@@ -17,7 +17,6 @@ const StatsCard = ({ title, value, icon: Icon, trend, color = 'blue' }) => {
                     <div className="text-2xl font-bold text-gray-900">{value}</div>
                     <Icon className={`h-6 w-6 sm:h-8 sm:w-8 ${colorClasses[color]} opacity-80`} />
                 </div>
-                <p className="text-xs text-gray-500 mt-2">{trend}</p>
             </div>
         </div>
     );
