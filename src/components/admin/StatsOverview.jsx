@@ -5,7 +5,7 @@ import { Users, FileText, DollarSign, AlertTriangle } from 'lucide-react';
 import StatsCard from '../ui/StatsCard';
 import StatusBadge from './StatusBadge';
 
-const StatsOverview = ({ customers, loans, allApplications, recentApplications }) => {
+const StatsOverview = ({ customers, loans, allApplications, recentApplications, payments, setPayments }) => {
     const calculateStats = (customers, loans, allApplications) => {
         const totalUsers = customers?.length || 0;
         const totalActiveLoans = customers?.reduce((count, customer) => {
@@ -16,7 +16,14 @@ const StatsOverview = ({ customers, loans, allApplications, recentApplications }
             ['Pending', 'In Review'].includes(app.status)
         ).length || 0;
 
-        const totalRevenue = '₦0';
+        // Sum the amount_paid from all payments
+        const revenue = payments?.reduce((sum, payment) => {
+            // Remove any currency symbols and commas if needed before parsing
+            const amount = parseFloat(String(payment.amount_paid).replace(/[₦,]/g, '')) || 0;
+            return sum + amount;
+        }, 0) || 0;
+
+        const totalRevenue = `₦${revenue.toLocaleString()}`;
 
         return [
             {

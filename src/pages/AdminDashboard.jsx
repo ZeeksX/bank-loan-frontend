@@ -6,6 +6,7 @@ import Loader from '../components/ui/Loader'
 const AdminDashboard = () => {
   const [allApplications, setAllApplications] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,7 +17,7 @@ const AdminDashboard = () => {
         setLoading(true);
 
         // Fetch applications and customers in parallel
-        const [applicationsResponse, customersResponse, loansResponse] = await Promise.all([
+        const [applicationsResponse, customersResponse, loansResponse, paymentsResponse] = await Promise.all([
           fetch('http://localhost:8000/api/loans/applications', {
             method: "GET",
             headers: {
@@ -37,20 +38,29 @@ const AdminDashboard = () => {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${localStorage.getItem('access_token')}`
             }
+          }), 
+          fetch('http://localhost:8000/api/payment_transactions', {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem('access_token')}`
+            }
           })
         ]);
 
-        if (!applicationsResponse.ok || !customersResponse.ok || !loansResponse) {
+        if (!applicationsResponse.ok || !customersResponse.ok || !loansResponse || !paymentsResponse) {
           throw new Error('Failed to fetch data');
         }
 
         const applicationsData = await applicationsResponse.json();
         const customersData = await customersResponse.json();
         const loansData = await loansResponse.json();
+        const paymentsData = await paymentsResponse.json();
 
         setAllApplications(applicationsData.data || []);
         setCustomers(customersData || []);
-        setLoans(loansData || [])
+        setLoans(loansData || []);
+        setPayments(paymentsData || []);
       } catch (error) {
         console.error('Error fetching data:', error);
         setError(error.message);
@@ -74,7 +84,7 @@ const AdminDashboard = () => {
     <div className='flex flex-row'>
       <Sidebar />
       <div className='ml-64 flex flex-col min-h-screen w-full'>
-        <Outlet context={{ allApplications, customers, loans, setAllApplications, setCustomers }} />
+        <Outlet context={{ allApplications, customers, loans, setAllApplications, setCustomers, payments, setPayments }} />
       </div>
     </div>
   );

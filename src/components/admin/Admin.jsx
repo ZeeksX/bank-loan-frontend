@@ -17,13 +17,16 @@ const Admin = () => {
     customers,
     loans,
     setAllApplications,
-    setCustomers
+    setCustomers,
+    payments, setPayments
   } = useOutletContext() ?? {
     allApplications: [],
     customers: [],
     loans: [],
+    payments: [],
     setAllApplications: () => { },
-    setCustomers: () => { }
+    setCustomers: () => { },
+    setPayments: () => { }
   };
 
   const handleTabChange = (tabValue) => {
@@ -128,6 +131,8 @@ const Admin = () => {
                 <StatsOverview
                   customers={customers}
                   loans={loans}
+                  payments={payments}
+                  setPayments={setPayments}
                   allApplications={allApplications}
                   recentApplications={recentApplications}
                 />
