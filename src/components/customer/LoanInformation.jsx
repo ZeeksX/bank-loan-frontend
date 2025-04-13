@@ -7,17 +7,17 @@ const LoanInformation = () => {
     const { id } = useParams();
     const location = useLocation();
     const loan = location.state || {};
-    const customerId = JSON.parse(localStorage.getItem('user')).userId
-    console.log("Loan", loan)
+    const customerId = JSON.parse(localStorage.getItem('user')).userId;
+    console.log("Loan", loan);
     const [paymentAmount, setPaymentAmount] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('online');
     const [toast, setToast] = useState({
         message: "",
         type: ""
-    })
+    });
     const [isProcessing, setIsProcessing] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
-
+    console.log("LOan: ", loan)
     // Extract numeric value from formatted money string (e.g., "₦150,000" -> 150000)
     const extractAmount = (formattedAmount) => {
         if (!formattedAmount || formattedAmount === 'N/A') return 0;
@@ -49,16 +49,10 @@ const LoanInformation = () => {
 
         setIsProcessing(true);
 
-        // Calculate the next payment number based on existing payments
-        const paymentNumber = loan.paymentHistory ? loan.paymentHistory.length + 1 : 1;
-
         const paymentData = {
-            loan_id: loan.id,
-            schedule_id: paymentNumber, // This will be the next payment number
+            loan_id: loan.loan_id,
             customer_id: customerId,
             amount_paid: parseFloat(paymentAmount),
-            principal_portion: loan.principal_portion || 0,
-            interest_portion: loan.interest_portion || 0,
             payment_date: new Date().toISOString(),
             payment_method: paymentMethod,
         };
@@ -73,25 +67,24 @@ const LoanInformation = () => {
                 body: JSON.stringify(paymentData)
             });
 
+            const responseData = await response.json();
+
             if (response.ok) {
                 setToast({
-                    message: "Transaction submitted successfully",
+                    message: "Payment processed successfully",
                     type: "success"
                 });
                 setPaymentSuccess(true);
-                // Refresh loan data to get updated payment history
-                // You might want to implement this function
-                // await fetchLoanData(); 
+                // You might want to refresh loan data here
             } else {
-                const errorData = await response.json();
                 setToast({
-                    message: errorData.message || "Failed to process payment",
+                    message: responseData.message || "Failed to process payment",
                     type: "error"
                 });
             }
         } catch (error) {
             setToast({
-                message: "An error occurred while processing your payment",
+                message: error.message || "An error occurred while processing payment",
                 type: "error"
             });
         } finally {
@@ -238,7 +231,7 @@ const LoanInformation = () => {
                     )}
 
                     {/* Payment Section - Only show if loan is active */}
-                    {loan.status === 'approved' && (
+                    {loan.status === 'active' && (
                         <div className="bg-blue-50 rounded-lg p-6 mb-6">
                             <h3 className="text-lg font-medium mb-4 text-gray-900">Make a Payment</h3>
 
@@ -316,7 +309,7 @@ const LoanInformation = () => {
                                     <button
                                         type="submit"
                                         disabled={isProcessing}
-                                        className="flex items-center justify-center w-full md:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                                        className="flex items-center cursor-pointer justify-center w-full md:w-auto px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                                     >
                                         {isProcessing ? (
                                             <>
@@ -359,8 +352,8 @@ const LoanInformation = () => {
                                                 ₦{parseFloat(payment.amount_paid).toLocaleString()}
                                             </p>
                                             <p className={`text-xs px-2 py-1 rounded-full inline-block ${payment.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                    payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                        'bg-red-100 text-red-800'
+                                                payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-red-100 text-red-800'
                                                 }`}>
                                                 {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                                             </p>

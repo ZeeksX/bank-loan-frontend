@@ -34,10 +34,23 @@ const Container = () => {
     fetchLoans();
   }, [customerId]);
 
-  // Assuming loan applications are returned as an array inside myLoans.data
-  // and that they are sorted (or you need to sort them by date)
+  // Compute total outstanding from 'approved' or 'active' loans
+  const totalOutstanding = loans
+    .filter(loan => loan.status === 'approved' || loan.status === 'active')
+    .reduce((sum, loan) => {
+      const paid = parseFloat(loan.amount.replace(/[₦,]/g, '') || 0);
+      return sum + paid;
+    }, 0);
+
+  const nextPayment = loans
+    .filter(loan => loan.status === 'approved' || loan.status === 'active')
+    .reduce((sum, loan) => {
+      const paid = parseFloat(loan.nextPayment.replace(/[₦,]/g, '') || 0);
+      return sum + paid;
+    }, 0);
+
   const recentLoan = loans && loans.length > 0
-    ? loans[loans.length - 1]  // assuming the latest is last
+    ? loans[loans.length - 1] 
     : null;
   console.log("Recent Loan", recentLoan)
   const cardData = [
@@ -51,14 +64,14 @@ const Container = () => {
     {
       id: 2,
       title: 'Total Outstanding',
-      value: `₦${myLoans.amount ?? 0}`,
+      value: `₦${totalOutstanding}`,
       icon: <DollarSign size={16} />,
       delay: 0.1
     },
     {
       id: 3,
       title: 'Next Payment',
-      value: `₦${myLoans.amount ?? 0}`,
+      value: `₦${nextPayment}`,
       icon: <Wallet size={16} />,
       description: `Due on ${myLoans.due ?? "N/A"}`,
       delay: 0.2

@@ -1,20 +1,31 @@
 // src/components/Toast.jsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, AlertTriangle, Info, AlertCircle } from 'lucide-react';
 
 const Toast = ({ message, type = 'info', duration = 3000, onClose }) => {
+    const [isVisible, setIsVisible] = useState(true);
+
+    // Fallback onClose function
+    const handleClose = () => {
+        if (onClose) {
+            onClose();
+        } else {
+            setIsVisible(false);
+        }
+    };
+
     useEffect(() => {
         if (!message) return;
 
         const timer = setTimeout(() => {
-            onClose();
+            handleClose();
         }, duration);
 
         return () => clearTimeout(timer);
-    }, [message, duration, onClose]);
+    }, [message, duration]);
 
-    if (!message) return null;
+    if (!message || !isVisible) return null;
 
     const getIcon = () => {
         switch (type) {
@@ -49,12 +60,12 @@ const Toast = ({ message, type = 'info', duration = 3000, onClose }) => {
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className={`rounded-lg border ${getBackground()} p-4 shadow-md flex items-start gap-3`}
+                    className={`rounded-lg border ${getBackground()} p-4 shadow-md flex items-center gap-3`}
                 >
                     {getIcon()}
                     <div className="flex-1">{message}</div>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="text-gray-500 hover:text-gray-800"
                     >
                         <X className="w-4 h-4" />

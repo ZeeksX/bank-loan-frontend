@@ -43,14 +43,14 @@ const ApplicationsTable = ({ applications, handleReview, handleApprove, handleRe
                                                 <td className="px-6 py-4">{app.date}</td>
                                                 <td className="px-6 py-4 text-right">
                                                     <div className="flex justify-end space-x-2">
-                                                        <button
-                                                            onClick={() => handleReview(app.id)}
-                                                            className="text-blue-600 cursor-pointer hover:text-blue-800 text-xs p-1 font-medium"
-                                                        >
-                                                            Review
-                                                        </button>
-                                                        {app.status === 'Pending' || app.status === 'In Review' ? (
+                                                        {(app.status === 'Pending' || app.status === 'In Review') && (
                                                             <>
+                                                                <button
+                                                                    onClick={() => handleReview(app.id)}
+                                                                    className="text-blue-600 cursor-pointer hover:text-blue-800 text-xs p-1 font-medium"
+                                                                >
+                                                                    Review
+                                                                </button>
                                                                 <button
                                                                     onClick={() => handleApprove(app.id)}
                                                                     className="text-green-600 cursor-pointer hover:text-green-800 text-xs p-1 font-medium"
@@ -64,7 +64,7 @@ const ApplicationsTable = ({ applications, handleReview, handleApprove, handleRe
                                                                     Reject
                                                                 </button>
                                                             </>
-                                                        ) : null}
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
