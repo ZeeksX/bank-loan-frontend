@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Menu, X, Bell, User, LogOut } from 'lucide-react';
 import { useAuth } from "./Auth";
 import Loader from "./ui/Loader";
-import Button from '@mui/material/Button'; // Import Material UI Button
-import Dialog from '@mui/material/Dialog'; // Import Material UI Dialog
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
@@ -19,7 +19,7 @@ const TopNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
-  const [openLogoutDialog, setOpenLogoutDialog] = useState(false); // State for the dialog
+  const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -58,7 +58,7 @@ const TopNav = () => {
     }, 2000);
 
     setIsProfileDropdownOpen(false);
-    setIsMobileMenuOpen(false); // Close mobile menu on logout
+    setIsMobileMenuOpen(false);
   };
 
   const handleOpenLogoutDialog = () => {
@@ -81,29 +81,26 @@ const TopNav = () => {
     { name: 'Profile', path: '/profile' },
   ];
 
-  // Function to determine if a link is active - handles base path '/' specifically
-  const isLinkActive = (path) => {
-    if (path === '/') {
-      return location.pathname === '/';
-    }
-    return location.pathname.startsWith(path); // More robust for nested routes if needed
-  };
+  // Common function for NavLink classnames
+  const getDesktopLinkClasses = ({ isActive }) =>
+    `text-sm font-medium rounded-md ${isActive ? 'text-blue-600' : 'text-zinc-600 hover:text-zinc-900'}`;
+
+  const getMobileLinkClasses = ({ isActive }) =>
+    `w-full justify-start py-3 text-base ${isActive ? 'text-blue-600 bg-blue-50 font-medium' : 'text-zinc-700 hover:text-zinc-900'}`;
 
   return (
     <>
       {loading && <Loader />}
       <header
         className={`${loading ? 'hidden' : ''} fixed inter top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
-          ? 'py-3 bg-white/90 backdrop-blur-md shadow-sm border-b border-zinc-100'
-          : 'py-5 bg-transparent'
+            ? 'py-3 bg-white/90 backdrop-blur-md shadow-sm border-b border-zinc-100'
+            : 'py-5 bg-transparent'
           }`}
       >
         <div className="container mx-auto w-[95vw] px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex justify-center items-center gap-2">
-            <motion.div
-              className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-blue-400 flex items-center justify-center"
-            >
+            <motion.div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-blue-400 flex items-center justify-center">
               <span className="text-white font-bold text-sm">B</span>
             </motion.div>
             <span className="font-semibold text-xl text-zinc-900">BankLoan</span>
@@ -112,20 +109,13 @@ const TopNav = () => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex gap-6 items-center space-x-1">
             {navLinks.map((link) => (
-              <button
+              <NavLink
                 key={link.path}
-                className={`
-                                    text-sm font-medium rounded-md
-                                    ${isLinkActive(link.path)
-                    ? 'text-blue-600'
-                    : 'text-zinc-600 hover:text-zinc-900'
-                  }
-                                `}
+                to={link.path}
+                className={getDesktopLinkClasses}
               >
-                <Link to={link.path}>
-                  {link.name}
-                </Link>
-              </button>
+                {link.name}
+              </NavLink>
             ))}
           </nav>
 
@@ -149,16 +139,16 @@ const TopNav = () => {
               {/* Profile Dropdown Menu */}
               {isProfileDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                  <Link
+                  <NavLink
                     to="/profile"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setIsProfileDropdownOpen(false)}
                   >
                     Your Profile
-                  </Link>
+                  </NavLink>
                   <button
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 flex items-center"
-                    onClick={handleOpenLogoutDialog} // Open dialog instead of direct logout
+                    onClick={handleOpenLogoutDialog}
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout
@@ -175,7 +165,6 @@ const TopNav = () => {
             aria-label="Toggle menu"
             aria-expanded={isMobileMenuOpen}
           >
-            {/* Conditionally render Menu or X icon */}
             {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
@@ -189,27 +178,20 @@ const TopNav = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8 h-full flex flex-col">
           <nav className="flex flex-col space-y-4 text-lg flex-grow">
             {navLinks.map((link) => (
-              <button
+              <NavLink
                 key={link.path}
-                className={`
-                                    w-full justify-start py-3 text-base
-                                    ${isLinkActive(link.path)
-                    ? 'text-blue-600 bg-blue-50 font-medium'
-                    : 'text-zinc-700 hover:text-zinc-900'
-                  }
-                                `}
+                to={link.path}
+                className={getMobileLinkClasses}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <Link to={link.path}>
-                  {link.name}
-                </Link>
-              </button>
+                {link.name}
+              </NavLink>
             ))}
 
             {/* Mobile logout button */}
             <button
               className="w-full justify-start py-3 text-base text-red-600 hover:bg-red-50 flex items-center"
-              onClick={handleOpenLogoutDialog} // Open dialog instead of direct logout
+              onClick={handleOpenLogoutDialog}
             >
               <LogOut className="h-5 w-5 mr-2" />
               Logout
@@ -226,9 +208,7 @@ const TopNav = () => {
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">
-          {"Confirm Logout"}
-        </DialogTitle>
+        <DialogTitle id="alert-dialog-title">Confirm Logout</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             Are you sure you want to logout?

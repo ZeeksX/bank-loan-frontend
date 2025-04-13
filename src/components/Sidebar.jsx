@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -12,8 +12,8 @@ import {
 import { motion } from "framer-motion";
 import { useAuth } from "./Auth";
 import Loader from "./ui/Loader";
-import Button from '@mui/material/Button'; // Import Material UI Button
-import Dialog from '@mui/material/Dialog'; // Import Material UI Dialog
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
@@ -22,8 +22,9 @@ import DialogTitle from '@mui/material/DialogTitle';
 const Sidebar = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation(); // Get current location
   const [loading, setLoading] = useState(false);
-  const [openLogoutDialog, setOpenLogoutDialog] = useState(false); // State for the dialog
+  const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
 
   const adminMenuItems = [
     {
@@ -83,6 +84,20 @@ const Sidebar = () => {
     handleLogout();
   };
 
+  // Helper function to check if a menu item is active
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+
+  // Function to get the appropriate class based on active state
+  const getItemClass = (path) => {
+    if (isActive(path)) {
+      return "flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500 text-white transition-colors";
+    } else {
+      return "flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700";
+    }
+  };
+
   return (
     <>
       {loading && <Loader />}
@@ -112,7 +127,7 @@ const Sidebar = () => {
                 <li key={item.title}>
                   <Link
                     to={item.path}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+                    className={getItemClass(item.path)}
                     title={item.title}
                   >
                     <item.icon className="w-5 h-5" />
@@ -131,7 +146,7 @@ const Sidebar = () => {
                 <li key={item.title}>
                   <Link
                     to={item.path}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-700"
+                    className={getItemClass(item.path)}
                     title={item.title}
                   >
                     <item.icon className="w-5 h-5" />
@@ -147,7 +162,7 @@ const Sidebar = () => {
         <div className="p-4">
           <button
             onClick={handleOpenLogoutDialog}
-            className="flex cursor-pointer items-center gap-2 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            className="flex cursor-pointer items-center gap-2 p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors w-full"
           >
             <LogOut className="w-5 h-5" />
             <span>Exit Admin</span>
@@ -158,7 +173,7 @@ const Sidebar = () => {
       {/* Logout Confirmation Dialog */}
       <Dialog
         open={openLogoutDialog}
-        sx={{fontFamily: "inter"}}
+        sx={{ fontFamily: "inter" }}
         onClose={handleCloseLogoutDialog}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
