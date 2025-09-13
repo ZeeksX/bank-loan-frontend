@@ -58,7 +58,7 @@ const MyLoans = () => {
     useEffect(() => {
         const fetchLoans = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/api/loans/customer/${customerId}`, {
+                const response = await fetch(`https://bank-loan-backend-4cyr.onrender.com/api/loans/customer/${customerId}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',

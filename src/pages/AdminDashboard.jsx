@@ -18,28 +18,28 @@ const AdminDashboard = () => {
 
         // Fetch applications and customers in parallel
         const [applicationsResponse, customersResponse, loansResponse, paymentsResponse] = await Promise.all([
-          fetch('http://localhost:8000/api/loans/applications', {
+          fetch('https://bank-loan-backend-4cyr.onrender.com/api/loans/applications', {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${localStorage.getItem('access_token')}`
             }
           }),
-          fetch('http://localhost:8000/api/customers/all', {
+          fetch('https://bank-loan-backend-4cyr.onrender.com/api/customers/all', {
             method: "GET",
             headers: {
               "Content-Type": "application/json",
               "Authorization": `Bearer ${localStorage.getItem('access_token')}`
             }
           }),
-          fetch('http://localhost:8000/api/loans', {
+          fetch('https://bank-loan-backend-4cyr.onrender.com/api/loans', {
             method: "GET",
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${localStorage.getItem('access_token')}`
             }
           }), 
-          fetch('http://localhost:8000/api/payment_transactions', {
+          fetch('https://bank-loan-backend-4cyr.onrender.com/api/payment_transactions', {
             method: "GET",
             headers: {
               "Content-Type": "application/json",

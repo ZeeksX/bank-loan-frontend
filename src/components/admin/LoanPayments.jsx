@@ -12,7 +12,7 @@ const LoanPayments = () => {
   useEffect(() => {
     const fetchPayments = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/payment_transactions', {
+        const response = await fetch('https://bank-loan-backend-4cyr.onrender.com/api/payment_transactions', {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -65,7 +65,7 @@ const LoanPayments = () => {
 
   const handleConfirm = async (transactionId) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/payment_transactions/${transactionId}`, {
+      const response = await fetch(`https://bank-loan-backend-4cyr.onrender.com/api/payment_transactions/${transactionId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -93,7 +93,7 @@ const LoanPayments = () => {
 
   const handleReject = async (transactionId) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/payment_transactions/${transactionId}`, {
+      const response = await fetch(`https://bank-loan-backend-4cyr.onrender.com/api/payment_transactions/${transactionId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

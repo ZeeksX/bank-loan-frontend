@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
         }
 
         try {
-            const response = await fetch("http://localhost:8000/api/refresh", {
+            const response = await fetch("https://bank-loan-backend-4cyr.onrender.com/api/refresh", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

@@ -50,7 +50,7 @@ const DocumentItem = ({ document, customerId, onUploadSuccess }) => {
 
         try {
             setIsLoading(true);
-            const response = await fetch('http://localhost:8000/api/documents/upload', {
+            const response = await fetch('https://bank-loan-backend-4cyr.onrender.com/api/documents/upload', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('access_token')}`

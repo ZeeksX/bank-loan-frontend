@@ -52,7 +52,7 @@ const Users = () => {
       };
 
       // Send POST request to backend
-      const response = await fetch('http://localhost:8000/api/customers', {
+      const response = await fetch('https://bank-loan-backend-4cyr.onrender.com/api/customers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

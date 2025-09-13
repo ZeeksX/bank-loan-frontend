@@ -1,5 +1,5 @@
 // src/services/adminService.js
-const API_BASE_URL = "http://localhost:8000/api";
+const API_BASE_URL = "https://bank-loan-backend-4cyr.onrender.com/api";
 
 // Get auth token from localStorage
 const getAuthToken = () => localStorage.getItem("access_token");
