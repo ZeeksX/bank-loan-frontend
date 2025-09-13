@@ -22,14 +22,14 @@ const Dashboard = () => {
                 if (!user?.userId) throw new Error('User not authenticated');
 
                 const [productsRes, loansRes, documentRes] = await Promise.all([
-                    fetch('http://localhost:8000/api/loans/products'),
-                    fetch(`http://localhost:8000/api/customers/${user.userId}/details-with-loans`, {
+                    fetch('https://bank-loan-backend-4cyr.onrender.com/api/loans/products'),
+                    fetch(`https://bank-loan-backend-4cyr.onrender.com/api/customers/${user.userId}/details-with-loans`, {
                         headers: {
                             "Content-Type": "application/json",
                             "Authorization": `Bearer ${localStorage.getItem('access_token')}`
                         }
                     }),
-                    fetch(`http://localhost:8000/api/documents/customer/${user.userId}`, {
+                    fetch(`https://bank-loan-backend-4cyr.onrender.com/api/documents/customer/${user.userId}`, {
                         headers: {
                             "Content-Type": "application/json",
                             "Authorization": `Bearer ${localStorage.getItem('access_token')}`

@@ -58,7 +58,7 @@ const LoanInformation = () => {
         };
 
         try {
-            const response = await fetch('http://localhost:8000/api/payment-transaction', {
+            const response = await fetch('https://bank-loan-backend-4cyr.onrender.com/api/payment-transaction', {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

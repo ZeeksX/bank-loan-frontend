@@ -35,7 +35,7 @@ const Loans = () => {
   useEffect(() => {
     const fetchLoanProducts = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/loans/products');
+        const response = await fetch('https://bank-loan-backend-4cyr.onrender.com/api/loans/products');
         if (response.ok) {
           const data = await response.json();
           setLoanProducts(data);
@@ -122,7 +122,7 @@ const Loans = () => {
       console.log("Data Sent", dataSent)
 
       // Send POST request to backend
-      const response = await fetch('http://localhost:8000/api/loans/apply', {
+      const response = await fetch('https://bank-loan-backend-4cyr.onrender.com/api/loans/apply', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

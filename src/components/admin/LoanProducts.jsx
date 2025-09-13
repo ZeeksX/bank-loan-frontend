@@ -29,7 +29,7 @@ const LoanProducts = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/loans/products');
+        const response = await fetch('https://bank-loan-backend-4cyr.onrender.com/api/loans/products');
         if (response.ok) {
           const data = await response.json();
           setProducts(data);
@@ -54,7 +54,7 @@ const LoanProducts = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch(`http://localhost:8000/api/loans/products/${formData.product_id}`, {
+      const response = await fetch(`https://bank-loan-backend-4cyr.onrender.com/api/loans/products/${formData.product_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -100,7 +100,7 @@ const LoanProducts = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:8000/api/loans/products', {
+      const response = await fetch('https://bank-loan-backend-4cyr.onrender.com/api/loans/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -139,7 +139,7 @@ const LoanProducts = () => {
 
   const handleDeactivateLoanProduct = async (productId, isActive) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/loans/products/${productId}`, {
+      const response = await fetch(`https://bank-loan-backend-4cyr.onrender.com/api/loans/products/${productId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -173,7 +173,7 @@ const LoanProducts = () => {
     if (!productToDelete) return;
 
     try {
-      const response = await fetch(`http://localhost:8000/api/loans/products/${productToDelete.product_id}`, {
+      const response = await fetch(`https://bank-loan-backend-4cyr.onrender.com/api/loans/products/${productToDelete.product_id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`

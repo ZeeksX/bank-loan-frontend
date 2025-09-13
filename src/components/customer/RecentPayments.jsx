@@ -9,7 +9,7 @@ const RecentPayments = () => {
     useEffect(() => {
         const fetchPaymentHistory = async () => {
             try {
-                const response = await fetch(`http://localhost:8000/api/customers/${customerId}/payments`, {
+                const response = await fetch(`https://bank-loan-backend-4cyr.onrender.com/api/customers/${customerId}/payments`, {
                     method: "GET",
                     headers: {
                         'Content-Type': "application/json",

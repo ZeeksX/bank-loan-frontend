@@ -291,7 +291,7 @@ const LoanApplicationForm = ({ product }) => {
             }
 
             try {
-                const response = await fetch('http://localhost:8000/api/loans/apply', {
+                const response = await fetch('https://bank-loan-backend-4cyr.onrender.com/api/loans/apply', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

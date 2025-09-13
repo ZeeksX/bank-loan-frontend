@@ -177,7 +177,7 @@ const Profile = () => {
     };
     
     try {
-      const response = await fetch(`http://localhost:8000/api/customers/${user.customer_id}`, {
+      const response = await fetch(`https://bank-loan-backend-4cyr.onrender.com/api/customers/${user.customer_id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

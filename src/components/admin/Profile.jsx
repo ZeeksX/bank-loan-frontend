@@ -14,7 +14,7 @@ const Profile = () => {
   useEffect(() => {
     const fetchMe = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/me`, {
+        const response = await fetch(`https://bank-loan-backend-4cyr.onrender.com/api/me`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ const Profile = () => {
   const handleSaveProfile = async () => {
     setIsEditing(false);
     try {
-      const response = await fetch(`http://localhost:8000/api/employees/${adminData.employee_id}`, {
+      const response = await fetch(`https://bank-loan-backend-4cyr.onrender.com/api/employees/${adminData.employee_id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
